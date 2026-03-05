@@ -9,6 +9,7 @@ from app.models.identity import (  # noqa: F401
     BizRole, Permission, BizRolePermission, MembershipRole,
     Agent, AgentCredential, AgentRun, AuditEvent,
 )
+from app.models.auth import Role as AuthRole, user_roles  # noqa: F401
 from app.models.timeclock import TimeEntry, TimeEntryStatus  # noqa: F401
 from app.models.marketplace import (  # noqa: F401
     JobPosting, ShiftRequest, TrainingRequest, ShiftSwapRequest, SwapPermissionRule,
