@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Copilot Console — Workforce</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0d1117;
+      color: #c9d1d9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Login overlay ── */
+    #login-overlay {
+      position: fixed; inset: 0;
+      background: #0d1117;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .login-box {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 36px 40px;
+      width: 360px;
+    }
+
+    .login-box h2 { color: #58a6ff; font-size: 18px; margin-bottom: 6px; }
+    .login-box p  { color: #8b949e; font-size: 12px; margin-bottom: 24px; }
+
+    .field { margin-bottom: 16px; }
+
+    .field label {
+      display: block;
+      font-size: 12px;
+      color: #8b949e;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .field input {
+      width: 100%;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #c9d1d9;
+      font-family: inherit;
+      font-size: 13px;
+      padding: 8px 12px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .field input:focus { border-color: #58a6ff; }
+
+    .login-btn {
+      width: 100%;
+      background: #1f6feb;
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 10px;
+      margin-top: 4px;
+      transition: background 0.15s;
+    }
+
+    .login-btn:hover { background: #388bfd; }
+
+    #login-error { color: #f85149; font-size: 12px; margin-top: 12px; min-height: 16px; }
+
+    /* ── Header ── */
+    header {
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    header h1 { font-size: 15px; color: #58a6ff; letter-spacing: 0.05em; font-family: "Fira Code", monospace; }
+
+    .badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      background: #1f6feb33;
+      border: 1px solid #1f6feb;
+      color: #58a6ff;
+    }
+
+    #user-info { font-size: 12px; color: #8b949e; }
+
+    .nav-links { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+
+    .nav-btn {
+      background: #21262d;
+      border: 1px solid #30363d;
+      color: #8b949e;
+      padding: 4px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-family: inherit;
+      text-decoration: none;
+      transition: all 0.15s;
+    }
+
+    .nav-btn:hover  { border-color: #58a6ff; color: #58a6ff; }
+    .nav-btn.active { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+
+    .logout-btn {
+      background: transparent;
+      border: 1px solid #30363d;
+      color: #8b949e;
+      padding: 4px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-family: inherit;
+    }
+
+    .logout-btn:hover { border-color: #f85149; color: #f85149; }
+
+    /* ── Model badge ── */
+    #model-badge {
+      font-size: 11px;
+      color: #484f58;
+      font-family: "Fira Code", monospace;
+    }
+
+    /* ── Chat area ── */
+    #chat-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .msg-row {
+      display: flex;
+      padding: 12px 24px;
+      gap: 16px;
+      transition: background 0.1s;
+    }
+
+    .msg-row:hover { background: #161b22; }
+
+    .msg-row.user   { flex-direction: row-reverse; }
+    .msg-row.system-row { opacity: 0.6; }
+
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+      font-weight: 600;
+    }
+
+    .avatar.copilot { background: #1f6feb22; border: 1px solid #1f6feb55; color: #58a6ff; }
+    .avatar.user    { background: #23863622; border: 1px solid #2ea04355; color: #3fb950; }
+
+    .bubble {
+      max-width: 680px;
+      font-size: 14px;
+      line-height: 1.7;
+      color: #c9d1d9;
+    }
+
+    .bubble.user {
+      background: #1c2128;
+      border: 1px solid #30363d;
+      border-radius: 12px 2px 12px 12px;
+      padding: 10px 14px;
+    }
+
+    .bubble.copilot { padding: 4px 0; }
+
+    /* Markdown-ish styling inside copilot bubbles */
+    .bubble code {
+      font-family: "Fira Code", "Cascadia Code", "Consolas", monospace;
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-size: 12px;
+      color: #79c0ff;
+    }
+
+    .bubble pre {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 14px 16px;
+      overflow-x: auto;
+      margin: 8px 0;
+      font-family: "Fira Code", monospace;
+      font-size: 12px;
+      color: #c9d1d9;
+    }
+
+    .bubble pre code { background: none; border: none; padding: 0; color: inherit; font-size: inherit; }
+
+    .bubble strong { color: #e6edf3; }
+    .bubble em     { color: #a5d6ff; }
+    .bubble h1, .bubble h2, .bubble h3 { color: #e6edf3; margin: 10px 0 4px; }
+    .bubble ul, .bubble ol { padding-left: 20px; margin: 4px 0; }
+    .bubble li { margin: 2px 0; }
+    .bubble p  { margin: 4px 0; }
+
+    /* Cursor blink while streaming */
+    .typing-cursor::after {
+      content: "▋";
+      animation: blink 0.7s step-start infinite;
+      color: #58a6ff;
+    }
+
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* ── Input area ── */
+    #input-area {
+      background: #161b22;
+      border-top: 1px solid #30363d;
+      padding: 16px 24px;
+      flex-shrink: 0;
+    }
+
+    #input-wrap {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 8px 12px;
+      transition: border-color 0.15s;
+    }
+
+    #input-wrap:focus-within { border-color: #58a6ff; }
+
+    #user-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #c9d1d9;
+      font-family: inherit;
+      font-size: 14px;
+      resize: none;
+      max-height: 180px;
+      line-height: 1.5;
+      overflow-y: auto;
+    }
+
+    #user-input::placeholder { color: #484f58; }
+
+    #send-btn {
+      background: #1f6feb;
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+      cursor: pointer;
+      font-size: 16px;
+      padding: 5px 10px;
+      line-height: 1;
+      transition: background 0.15s;
+      flex-shrink: 0;
+      align-self: flex-end;
+    }
+
+    #send-btn:hover:not(:disabled) { background: #388bfd; }
+    #send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .input-hint {
+      font-size: 11px;
+      color: #484f58;
+      margin-top: 6px;
+      text-align: right;
+    }
+
+    /* ── Empty state ── */
+    #empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      gap: 12px;
+      color: #484f58;
+      padding: 40px;
+    }
+
+    #empty-state .icon { font-size: 48px; }
+    #empty-state h2 { font-size: 18px; color: #8b949e; }
+    #empty-state p  { font-size: 13px; text-align: center; max-width: 360px; line-height: 1.6; }
+
+    .suggestion-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 8px;
+    }
+
+    .chip {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 20px;
+      color: #8b949e;
+      cursor: pointer;
+      font-size: 12px;
+      padding: 6px 14px;
+      transition: all 0.15s;
+    }
+
+    .chip:hover { border-color: #58a6ff; color: #58a6ff; }
+
+    /* ── Clear button ── */
+    #clear-btn {
+      background: transparent;
+      border: 1px solid #30363d;
+      color: #8b949e;
+      padding: 4px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+
+    #clear-btn:hover { border-color: #8b949e; color: #c9d1d9; }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0d1117; }
+    ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- Login overlay -->
+<div id="login-overlay">
+  <div class="login-box">
+    <h2>🤖 Copilot Console</h2>
+    <p>Superadmin access required</p>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="login-email" placeholder="admin@example.com" />
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="login-password" placeholder="••••••••" />
+    </div>
+    <button class="login-btn" onclick="doLogin()">Sign in</button>
+    <div id="login-error"></div>
+  </div>
+</div>
+
+<!-- Console UI -->
+<header>
+  <h1>🤖 Copilot Console</h1>
+  <span class="badge">superadmin</span>
+  <span id="user-info"></span>
+  <span id="model-badge"></span>
+  <div class="nav-links">
+    <button id="clear-btn" onclick="clearChat()">Clear</button>
+    <a href="/console/" class="nav-btn">⚡ Dev Console</a>
+    <a href="/console/copilot" class="nav-btn active">🤖 Copilot</a>
+    <button class="logout-btn" onclick="doLogout()">Logout</button>
+  </div>
+</header>
+
+<div id="chat-container">
+  <div id="empty-state">
+    <div class="icon">🤖</div>
+    <h2>GitHub Copilot</h2>
+    <p>Ask me anything about the Workforce codebase — debugging, architecture, code generation, or system administration.</p>
+    <div class="suggestion-chips">
+      <span class="chip" onclick="sendSuggestion('Explain the tenant isolation architecture')">Explain tenant isolation</span>
+      <span class="chip" onclick="sendSuggestion('How does JWT authentication work in this app?')">JWT auth flow</span>
+      <span class="chip" onclick="sendSuggestion('Walk me through the shift matching algorithm')">Matching algorithm</span>
+      <span class="chip" onclick="sendSuggestion('What models and tables exist in this system?')">List models</span>
+      <span class="chip" onclick="sendSuggestion('How do I add a new Alembic migration?')">Add migration</span>
+      <span class="chip" onclick="sendSuggestion('What API endpoints are available for marketplace?')">Marketplace API</span>
+    </div>
+  </div>
+</div>
+
+<div id="input-area">
+  <div id="input-wrap">
+    <textarea id="user-input" rows="1" placeholder="Ask Copilot anything…" spellcheck="true"></textarea>
+    <button id="send-btn" onclick="sendMessage()" title="Send (Enter)">↑</button>
+  </div>
+  <div class="input-hint">Enter to send · Shift+Enter for newline</div>
+</div>
+
+<script>
+  // ── State ──────────────────────────────────────────────────────────────────
+  let accessToken = null;
+  let isStreaming  = false;
+  const history    = [];   // [{role, content}]
+
+  // ── Init ───────────────────────────────────────────────────────────────────
+  (function init() {
+    const stored = sessionStorage.getItem("console_token");
+    const email  = sessionStorage.getItem("console_email");
+    if (stored) {
+      accessToken = stored;
+      showConsole(email);
+    }
+  })();
+
+  // ── Login ──────────────────────────────────────────────────────────────────
+  document.getElementById("login-password").addEventListener("keydown", e => {
+    if (e.key === "Enter") doLogin();
+  });
+
+  async function doLogin() {
+    const email    = document.getElementById("login-email").value.trim();
+    const password = document.getElementById("login-password").value;
+    document.getElementById("login-error").textContent = "";
+    try {
+      const resp = await fetch("/api/v1/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.detail || "Login failed");
+      }
+      const data = await resp.json();
+      accessToken = data.access_token;
+      sessionStorage.setItem("console_token", accessToken);
+      sessionStorage.setItem("console_email", email);
+      showConsole(email);
+    } catch (e) {
+      document.getElementById("login-error").textContent = e.message;
+    }
+  }
+
+  function showConsole(email) {
+    document.getElementById("login-overlay").style.display = "none";
+    document.getElementById("user-info").textContent = email || "";
+    document.getElementById("user-input").focus();
+  }
+
+  function doLogout() {
+    sessionStorage.removeItem("console_token");
+    sessionStorage.removeItem("console_email");
+    accessToken = null;
+    document.getElementById("login-overlay").style.display = "flex";
+    document.getElementById("login-password").value = "";
+  }
+
+  // ── Auto-resize textarea ───────────────────────────────────────────────────
+  const inputEl = document.getElementById("user-input");
+  inputEl.addEventListener("input", () => {
+    inputEl.style.height = "auto";
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 180) + "px";
+  });
+
+  inputEl.addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  // ── Chat ───────────────────────────────────────────────────────────────────
+  function sendSuggestion(text) {
+    inputEl.value = text;
+    sendMessage();
+  }
+
+  function clearChat() {
+    history.length = 0;
+    const container = document.getElementById("chat-container");
+    container.innerHTML = "";
+    container.appendChild(emptyState());
+  }
+
+  function emptyState() {
+    const el = document.createElement("div");
+    el.id = "empty-state";
+    el.innerHTML = `
+      <div class="icon">🤖</div>
+      <h2>GitHub Copilot</h2>
+      <p>Ask me anything about the Workforce codebase — debugging, architecture, code generation, or system administration.</p>
+      <div class="suggestion-chips">
+        <span class="chip" onclick="sendSuggestion('Explain the tenant isolation architecture')">Explain tenant isolation</span>
+        <span class="chip" onclick="sendSuggestion('How does JWT authentication work in this app?')">JWT auth flow</span>
+        <span class="chip" onclick="sendSuggestion('Walk me through the shift matching algorithm')">Matching algorithm</span>
+        <span class="chip" onclick="sendSuggestion('What models and tables exist in this system?')">List models</span>
+        <span class="chip" onclick="sendSuggestion('How do I add a new Alembic migration?')">Add migration</span>
+        <span class="chip" onclick="sendSuggestion('What API endpoints are available for marketplace?')">Marketplace API</span>
+      </div>`;
+    return el;
+  }
+
+  async function sendMessage() {
+    if (isStreaming || !accessToken) return;
+    const text = inputEl.value.trim();
+    if (!text) return;
+
+    // Hide empty state
+    const emptyEl = document.getElementById("empty-state");
+    if (emptyEl) emptyEl.remove();
+
+    // Reset input
+    inputEl.value = "";
+    inputEl.style.height = "auto";
+    document.getElementById("send-btn").disabled = true;
+
+    // Add user message to history + UI
+    history.push({ role: "user", content: text });
+    appendMessage("user", text);
+
+    // Create assistant bubble (streaming)
+    const assistantBubble = appendMessage("copilot", "");
+    const bubbleContent = assistantBubble.querySelector(".bubble");
+    bubbleContent.classList.add("typing-cursor");
+
+    isStreaming = true;
+    let fullResponse = "";
+
+    try {
+      const resp = await fetch("/console/copilot/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + accessToken,
+        },
+        body: JSON.stringify({ messages: history }),
+      });
+
+      if (resp.status === 401 || resp.status === 403) {
+        doLogout(); return;
+      }
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop();    // keep incomplete line
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const chunk = line.slice(6).trim();
+          if (chunk === "[DONE]") break;
+          try {
+            const parsed = JSON.parse(chunk);
+            if (parsed.error) {
+              fullResponse += "\n⚠️ " + parsed.error;
+            } else if (parsed.text) {
+              fullResponse += parsed.text;
+            }
+            bubbleContent.innerHTML = renderMarkdown(fullResponse);
+            scrollToBottom();
+          } catch (_) {}
+        }
+      }
+    } catch (err) {
+      fullResponse = "⚠️ " + String(err);
+      bubbleContent.innerHTML = renderMarkdown(fullResponse);
+    } finally {
+      bubbleContent.classList.remove("typing-cursor");
+      isStreaming = false;
+      document.getElementById("send-btn").disabled = false;
+      inputEl.focus();
+      if (fullResponse) history.push({ role: "assistant", content: fullResponse });
+      scrollToBottom();
+    }
+  }
+
+  function appendMessage(role, text) {
+    const container = document.getElementById("chat-container");
+
+    const row = document.createElement("div");
+    row.className = `msg-row ${role}`;
+
+    const avatar = document.createElement("div");
+    avatar.className = `avatar ${role}`;
+    avatar.textContent = role === "copilot" ? "✦" : "U";
+
+    const bubble = document.createElement("div");
+    bubble.className = `bubble ${role}`;
+    if (text) bubble.innerHTML = role === "copilot" ? renderMarkdown(text) : escapeHtml(text);
+
+    row.appendChild(avatar);
+    row.appendChild(bubble);
+    container.appendChild(row);
+    scrollToBottom();
+    return row;
+  }
+
+  function scrollToBottom() {
+    const c = document.getElementById("chat-container");
+    c.scrollTop = c.scrollHeight;
+  }
+
+  // ── Minimal markdown renderer ──────────────────────────────────────────────
+  function renderMarkdown(md) {
+    // Fenced code blocks
+    md = md.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) =>
+      `<pre><code>${escapeHtml(code.trim())}</code></pre>`);
+    // Inline code
+    md = md.replace(/`([^`]+)`/g, (_, c) => `<code>${escapeHtml(c)}</code>`);
+    // Bold
+    md = md.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+    // Italic
+    md = md.replace(/\*(.+?)\*/g, "<em>$1</em>");
+    // Headers
+    md = md.replace(/^### (.+)$/gm, "<h3>$1</h3>");
+    md = md.replace(/^## (.+)$/gm,  "<h2>$1</h2>");
+    md = md.replace(/^# (.+)$/gm,   "<h1>$1</h1>");
+    // Unordered lists
+    md = md.replace(/^[-*] (.+)$/gm, "<li>$1</li>");
+    md = md.replace(/(<li>.*<\/li>)/s, "<ul>$1</ul>");
+    // Newlines to <br> (outside block elements)
+    md = md.replace(/\n(?!<[hup]|<li|<pre|<\/)/g, "<br>");
+    return md;
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+</script>
+</body>
+</html>

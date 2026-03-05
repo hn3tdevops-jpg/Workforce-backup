@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Roles Editor — Workforce</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0d1117;
+      --surface:  #161b22;
+      --border:   #30363d;
+      --text:     #c9d1d9;
+      --muted:    #8b949e;
+      --blue:     #58a6ff;
+      --green:    #3fb950;
+      --red:      #f85149;
+      --yellow:   #d29922;
+    }
+    [data-theme="light"] {
+      --bg:       #f1f5f9;
+      --surface:  #ffffff;
+      --border:   #e2e8f0;
+      --text:     #1e293b;
+      --muted:    #64748b;
+      --blue:     #4f46e5;
+      --green:    #16a34a;
+      --red:      #dc2626;
+      --yellow:   #d97706;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 14px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Login overlay ──────────────────────────────────────────────────── */
+    #login-overlay {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 200;
+    }
+    .login-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 36px 40px;
+      width: 360px;
+    }
+    .login-box h2 { color: var(--blue); font-size: 18px; margin-bottom: 6px; }
+    .login-box p  { color: var(--muted); font-size: 12px; margin-bottom: 24px; }
+    .field { margin-bottom: 16px; }
+    .field label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .06em; }
+    .field input  { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 13px; padding: 8px 12px; outline: none; transition: border-color .15s; }
+    .field input:focus { border-color: var(--blue); }
+    .login-btn { width: 100%; background: #1f6feb; border: none; border-radius: 6px; color: #fff; cursor: pointer; font-size: 14px; font-weight: 600; padding: 10px; transition: background .15s; }
+    .login-btn:hover { background: #388bfd; }
+    #login-error { color: var(--red); font-size: 12px; margin-top: 12px; min-height: 16px; }
+
+    /* ── Header ─────────────────────────────────────────────────────────── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 20px;
+      display: flex; align-items: center; gap: 12px;
+      flex-shrink: 0;
+    }
+    header h1 { font-size: 15px; color: var(--blue); }
+    .badge { font-size: 11px; padding: 2px 8px; border-radius: 12px; background: #1f6feb22; border: 1px solid #1f6feb66; color: var(--blue); }
+    .logout-btn { margin-left: auto; background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+    .logout-btn:hover { border-color: var(--red); color: var(--red); }
+
+    /* ── Layout ─────────────────────────────────────────────────────────── */
+    .workspace { display: flex; flex: 1; overflow: hidden; }
+
+    /* ── Roles sidebar ──────────────────────────────────────────────────── */
+    .sidebar {
+      width: 240px;
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      flex-shrink: 0;
+    }
+    .sidebar-header {
+      padding: 12px 14px 10px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .sidebar-header span { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+    .add-role-btn {
+      background: #238636; border: 1px solid #2ea043; color: #fff;
+      padding: 3px 10px; border-radius: 5px; cursor: pointer; font-size: 12px;
+    }
+    .add-role-btn:hover { background: #2ea043; }
+
+    #role-list { flex: 1; overflow-y: auto; padding: 6px; }
+
+    .role-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 10px; border-radius: 6px; cursor: pointer;
+      margin-bottom: 2px; transition: background .1s;
+    }
+    .role-item:hover  { background: #21262d; }
+    .role-item.active { background: #1f6feb22; border: 1px solid #1f6feb44; }
+    .role-item .role-name { font-size: 13px; }
+    .role-item .perm-count { font-size: 11px; color: var(--muted); }
+    .role-del-btn {
+      background: transparent; border: none; color: var(--muted);
+      cursor: pointer; font-size: 14px; padding: 2px 4px; border-radius: 4px;
+      opacity: 0; transition: opacity .1s;
+    }
+    .role-item:hover .role-del-btn { opacity: 1; }
+    .role-del-btn:hover { color: var(--red); }
+
+    /* ── Editor pane ────────────────────────────────────────────────────── */
+    .editor-pane {
+      flex: 1; display: flex; flex-direction: column; overflow: hidden;
+    }
+    .editor-header {
+      padding: 14px 20px 10px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px;
+    }
+    #role-name-input {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+      color: var(--text); font-size: 15px; font-weight: 600; padding: 6px 10px;
+      outline: none; width: 220px; transition: border-color .15s;
+    }
+    #role-name-input:focus { border-color: var(--blue); }
+
+    .save-btn {
+      background: #238636; border: 1px solid #2ea043; color: #fff;
+      padding: 6px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;
+    }
+    .save-btn:hover { background: #2ea043; }
+    .save-btn:disabled { opacity: .4; cursor: default; }
+
+    #save-status { font-size: 12px; color: var(--muted); }
+
+    .editor-body { flex: 1; overflow-y: auto; padding: 20px; }
+
+    /* ── Permission groups ──────────────────────────────────────────────── */
+    .perm-group { margin-bottom: 28px; }
+    .group-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .group-title {
+      font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted);
+      font-weight: 600;
+    }
+    .group-toggle-all {
+      font-size: 11px; color: var(--blue); cursor: pointer; background: none; border: none;
+      padding: 0;
+    }
+    .group-toggle-all:hover { text-decoration: underline; }
+
+    .perm-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 8px;
+    }
+    .perm-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex; align-items: flex-start; gap: 10px;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+    }
+    .perm-card:hover { border-color: #4a5568; background: #1a1f2e; }
+    .perm-card.checked { border-color: var(--blue); background: #1f6feb11; }
+
+    .perm-card input[type=checkbox] {
+      margin-top: 2px; flex-shrink: 0; cursor: pointer;
+      width: 15px; height: 15px; accent-color: var(--blue);
+    }
+    .perm-info { display: flex; align-items: center; gap: 6px; }
+    .perm-info .perm-label { font-size: 13px; font-weight: 600; color: var(--text); }
+    .perm-help {
+      position: relative; display: inline-flex; align-items: center; justify-content: center;
+      width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--muted);
+      font-size: 10px; color: var(--muted); cursor: default; flex-shrink: 0; line-height: 1;
+    }
+    .perm-help:hover { border-color: var(--blue); color: var(--blue); }
+    .perm-help .perm-tooltip {
+      display: none; position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+      background: #2d3347; border: 1px solid #4a5568; border-radius: 6px;
+      padding: 6px 10px; font-size: 11px; color: var(--text); white-space: nowrap;
+      pointer-events: none; z-index: 100;
+    }
+    .perm-help:hover .perm-tooltip { display: block; }
+
+    /* Empty state */
+    .empty-state {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      height: 100%; color: var(--muted); gap: 12px; text-align: center;
+    }
+    .empty-state .icon { font-size: 40px; }
+    .empty-state p { font-size: 13px; }
+
+    /* Toast */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: #21262d; border: 1px solid var(--border); border-radius: 8px;
+      padding: 10px 16px; font-size: 13px; opacity: 0;
+      transition: opacity .25s; pointer-events: none; z-index: 300;
+    }
+    #toast.show { opacity: 1; }
+    #toast.success { border-color: var(--green); color: var(--green); }
+    #toast.error   { border-color: var(--red);   color: var(--red);   }
+
+    /* New role modal */
+    #new-role-modal {
+      position: fixed; inset: 0; background: #0008;
+      display: none; align-items: center; justify-content: center; z-index: 11000;
+    }
+    #new-role-modal.open { display: flex; }
+    .modal-box {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      padding: 28px 32px; width: 400px;
+    }
+    .modal-box h3 { font-size: 16px; margin-bottom: 20px; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+    .modal-cancel { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 7px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+    .modal-cancel:hover { border-color: var(--muted); }
+    .modal-create { background: #238636; border: 1px solid #2ea043; color: #fff; padding: 7px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
+    .modal-create:hover { background: #2ea043; }
+
+    /* Preset chips */
+    .preset-label { font-size: 11px; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: .06em; }
+    .preset-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+    .preset-chip {
+      padding: 4px 12px; border-radius: 20px; border: 1px solid var(--border);
+      font-size: 12px; cursor: pointer; transition: all .15s; color: var(--muted);
+      background: transparent;
+    }
+    .preset-chip:hover  { border-color: var(--blue); color: var(--blue); }
+    .preset-chip.active { border-color: var(--blue); color: var(--blue); background: #1f6feb22; }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- Login overlay -->
+<div id="login-overlay">
+  <div class="login-box">
+    <h2>🔐 Roles Editor</h2>
+    <p>Superadmin access required</p>
+    <div class="field"><label>Email</label><input type="email" id="login-email" placeholder="admin@example.com" /></div>
+    <div class="field"><label>Password</label><input type="password" id="login-password" placeholder="••••••••" /></div>
+    <button class="login-btn" onclick="doLogin()">Sign in</button>
+    <div id="login-error"></div>
+  </div>
+</div>
+
+<!-- New role modal -->
+<div id="new-role-modal">
+  <div class="modal-box">
+    <h3>➕ Create New Role</h3>
+    <div class="field">
+      <label>Role Name</label>
+      <input type="text" id="new-role-name" placeholder="e.g. Team Lead" />
+    </div>
+    <div class="preset-label">Start from a preset</div>
+    <div class="preset-chips" id="preset-chips"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeNewRoleModal()">Cancel</button>
+      <button class="modal-create" onclick="createRole()">Create Role</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Main UI -->
+<header>
+  <h1>🛡️ Roles &amp; Permissions</h1>
+  <span class="badge">superadmin</span>
+  <button class="logout-btn" onclick="doLogout()">Logout</button>
+</header>
+
+<div class="workspace">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <span>System Roles</span>
+      <button class="add-role-btn" onclick="openNewRoleModal()">+ New</button>
+    </div>
+    <div id="role-list">
+      <div class="empty-state" style="height:120px;font-size:12px;">Loading…</div>
+    </div>
+  </div>
+
+  <!-- Editor -->
+  <div class="editor-pane">
+    <div class="editor-header" id="editor-header" style="display:none">
+      <input type="text" id="role-name-input" placeholder="Role name" />
+      <button class="save-btn" id="save-btn" onclick="saveRole()">Save</button>
+      <span id="save-status"></span>
+    </div>
+    <div class="editor-body" id="editor-body">
+      <div class="empty-state">
+        <div class="icon">🛡️</div>
+        <p>Select a role to edit its permissions,<br>or create a new one.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ────────────────────────────────────────────────────────────────────
+let token        = null;
+let allPerms     = {};   // { module: [{id, key, description}] }
+let roles        = [];   // [{id, name, permissions:[{key}]}]
+let activeRoleId = null;
+let checkedKeys  = new Set();
+
+const PRESET_PERMS = {
+  "Owner":      null,   // all
+  "Manager":    ["schedule:read","schedule:write","members:read","members:write","roles:read","locations:read","locations:write","timeclock:manage","marketplace:read","marketplace:write","messaging:manage","report:read","training:read","training:write"],
+  "Supervisor": ["schedule:read","schedule:write","members:read","timeclock:manage","messaging:manage","report:read","training:read"],
+  "Employee":   ["schedule:read","timeclock:manage","marketplace:read","marketplace:write","messaging:manage","training:read"],
+  "Viewer":     ["schedule:read","report:read"],
+};
+
+const PERM_LABELS = {
+  "schedule:read":    "View Schedule",
+  "schedule:write":   "Edit Schedule",
+  "members:read":     "View Members",
+  "members:write":    "Manage Members",
+  "roles:read":       "View Roles",
+  "roles:write":      "Edit Roles",
+  "locations:read":   "View Locations",
+  "locations:write":  "Edit Locations",
+  "timeclock:manage": "Time Clock",
+  "marketplace:read": "Browse Marketplace",
+  "marketplace:write":"Post to Marketplace",
+  "messaging:manage": "Team Messaging",
+  "report:read":      "View Reports",
+  "training:read":    "View Training",
+  "training:write":   "Edit Training",
+};
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+(function init() {
+  const t = sessionStorage.getItem("roles_token");
+  const e = sessionStorage.getItem("roles_email");
+  if (t) { token = t; showApp(e); }
+  document.getElementById("login-password").addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
+  document.getElementById("new-role-name").addEventListener("keydown", e => { if (e.key === "Enter") createRole(); });
+})();
+
+// ── Auth ─────────────────────────────────────────────────────────────────────
+async function doLogin() {
+  const email    = document.getElementById("login-email").value.trim();
+  const password = document.getElementById("login-password").value;
+  document.getElementById("login-error").textContent = "";
+  try {
+    const r = await fetch("/api/v1/auth/login", {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({email, password}),
+    });
+    if (!r.ok) throw new Error((await r.json().catch(()=>({}))).detail || "Login failed");
+    const d = await r.json();
+    token = d.access_token;
+    sessionStorage.setItem("roles_token", token);
+    sessionStorage.setItem("roles_email", email);
+    showApp(email);
+  } catch(e) {
+    document.getElementById("login-error").textContent = e.message;
+  }
+}
+
+function doLogout() {
+  sessionStorage.removeItem("roles_token");
+  sessionStorage.removeItem("roles_email");
+  token = null;
+  document.getElementById("login-overlay").style.display = "flex";
+}
+
+// ── Bootstrap ────────────────────────────────────────────────────────────────
+async function showApp(email) {
+  document.getElementById("login-overlay").style.display = "none";
+  await Promise.all([loadPermissions(), loadRoles()]);
+  renderRoleList();
+}
+
+async function api(method, path, body) {
+  const opts = {
+    method,
+    headers: {"Authorization": "Bearer " + token, "Content-Type": "application/json"},
+  };
+  if (body !== undefined) opts.body = JSON.stringify(body);
+  const r = await fetch(path, opts);
+  if (r.status === 401 || r.status === 403) { doLogout(); throw new Error("Session expired"); }
+  if (!r.ok) { const err = await r.json().catch(()=>({detail:"Request failed"})); throw new Error(err.detail || "Error"); }
+  if (r.status === 204) return null;
+  return r.json();
+}
+
+async function loadPermissions() {
+  const d = await api("GET", "/api/v1/control/permissions");
+  allPerms = d.groups;
+}
+
+async function loadRoles() {
+  roles = await api("GET", "/api/v1/control/roles");
+}
+
+// ── Role list ─────────────────────────────────────────────────────────────────
+function renderRoleList() {
+  const el = document.getElementById("role-list");
+  if (!roles.length) {
+    el.innerHTML = `<div style="padding:16px;color:var(--muted);font-size:12px;text-align:center;">No roles yet.<br>Click + New to create one.</div>`;
+    return;
+  }
+  el.innerHTML = roles.map(r => `
+    <div class="role-item ${r.id === activeRoleId ? 'active' : ''}" onclick="selectRole('${r.id}')">
+      <div>
+        <div class="role-name">${esc(r.name)}</div>
+        <div class="perm-count">${r.permissions.length} permission${r.permissions.length !== 1 ? 's' : ''}</div>
+      </div>
+      <button class="role-del-btn" title="Delete role" onclick="deleteRole(event,'${r.id}','${esc(r.name)}')">✕</button>
+    </div>
+  `).join("");
+}
+
+// ── Role editor ───────────────────────────────────────────────────────────────
+function selectRole(id) {
+  activeRoleId = id;
+  const role = roles.find(r => r.id === id);
+  if (!role) return;
+  checkedKeys = new Set(role.permissions.map(p => p.key));
+  renderRoleList();
+  renderEditor(role);
+}
+
+function renderEditor(role) {
+  document.getElementById("editor-header").style.display = "flex";
+  document.getElementById("role-name-input").value = role.name;
+  document.getElementById("save-status").textContent = "";
+
+  const body = document.getElementById("editor-body");
+
+  if (!Object.keys(allPerms).length) {
+    body.innerHTML = `<div class="empty-state"><p>No permissions registered.<br><a href="#" onclick="seedDefaults()" style="color:var(--blue)">Seed default permissions</a></p></div>`;
+    return;
+  }
+
+  body.innerHTML = Object.entries(allPerms).map(([module, perms]) => `
+    <div class="perm-group">
+      <div class="group-header">
+        <span class="group-title">📦 ${module}</span>
+        <button class="group-toggle-all" onclick="toggleGroup('${module}', this)">
+          ${perms.every(p => checkedKeys.has(p.key)) ? 'Deselect all' : 'Select all'}
+        </button>
+      </div>
+      <div class="perm-grid">
+        ${perms.map(p => `
+          <label class="perm-card ${checkedKeys.has(p.key) ? 'checked' : ''}">
+            <input type="checkbox" data-key="${p.key}" ${checkedKeys.has(p.key) ? 'checked' : ''}
+              onchange="togglePerm(this)" />
+            <div class="perm-info">
+              <div class="perm-label">${PERM_LABELS[p.key] || p.key}</div>
+              ${p.description ? `<span class="perm-help">?<span class="perm-tooltip">${p.description}</span></span>` : ''}
+            </div>
+          </label>
+        `).join("")}
+      </div>
+    </div>
+  `).join("");
+}
+
+function togglePerm(checkbox) {
+  const key = checkbox.dataset.key;
+  const card = checkbox.closest(".perm-card");
+  if (checkbox.checked) { checkedKeys.add(key); card.classList.add("checked"); }
+  else { checkedKeys.delete(key); card.classList.remove("checked"); }
+}
+
+function toggleGroup(module, btn) {
+  const perms = allPerms[module] || [];
+  const allChecked = perms.every(p => checkedKeys.has(p.key));
+  perms.forEach(p => {
+    const cb = document.querySelector(`input[data-key="${p.key}"]`);
+    const card = cb?.closest(".perm-card");
+    if (allChecked) { checkedKeys.delete(p.key); cb && (cb.checked = false); card?.classList.remove("checked"); }
+    else            { checkedKeys.add(p.key);    cb && (cb.checked = true);  card?.classList.add("checked");    }
+  });
+  btn.textContent = allChecked ? "Select all" : "Deselect all";
+}
+
+async function saveRole() {
+  const btn  = document.getElementById("save-btn");
+  const name = document.getElementById("role-name-input").value.trim();
+  if (!name) { toast("Role name is required", "error"); return; }
+  btn.disabled = true;
+  document.getElementById("save-status").textContent = "Saving…";
+  try {
+    const updated = await api("PUT", `/api/v1/control/roles/${activeRoleId}`, {
+      name,
+      permission_keys: [...checkedKeys],
+    });
+    // Update local state
+    const idx = roles.findIndex(r => r.id === activeRoleId);
+    if (idx >= 0) roles[idx] = updated;
+    renderRoleList();
+    document.getElementById("save-status").textContent = "";
+    toast("Role saved ✓", "success");
+  } catch(e) {
+    toast(e.message, "error");
+    document.getElementById("save-status").textContent = "";
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ── New role modal ────────────────────────────────────────────────────────────
+let selectedPreset = null;
+
+function openNewRoleModal() {
+  selectedPreset = null;
+  document.getElementById("new-role-name").value = "";
+  // Render preset chips
+  const chips = document.getElementById("preset-chips");
+  chips.innerHTML = Object.keys(PRESET_PERMS).map(name => `
+    <button class="preset-chip" onclick="selectPreset('${name}', this)">${name}</button>
+  `).join("");
+  document.getElementById("new-role-modal").classList.add("open");
+  setTimeout(() => document.getElementById("new-role-name").focus(), 50);
+}
+
+function closeNewRoleModal() {
+  document.getElementById("new-role-modal").classList.remove("open");
+}
+
+function selectPreset(name, el) {
+  document.querySelectorAll(".preset-chip").forEach(c => c.classList.remove("active"));
+  el.classList.add("active");
+  selectedPreset = name;
+  if (!document.getElementById("new-role-name").value.trim()) {
+    document.getElementById("new-role-name").value = name;
+  }
+}
+
+async function createRole() {
+  const name = document.getElementById("new-role-name").value.trim();
+  if (!name) { toast("Enter a role name", "error"); return; }
+
+  // Compute initial permissions
+  let permKeys = [];
+  if (selectedPreset && PRESET_PERMS[selectedPreset] !== null) {
+    permKeys = PRESET_PERMS[selectedPreset];
+  } else if (selectedPreset && PRESET_PERMS[selectedPreset] === null) {
+    // Owner — all permissions
+    permKeys = Object.values(allPerms).flat().map(p => p.key);
+  }
+
+  try {
+    const role = await api("POST", "/api/v1/control/roles", { name, permission_keys: permKeys });
+    roles.push(role);
+    closeNewRoleModal();
+    renderRoleList();
+    selectRole(role.id);
+    toast(`Role "${name}" created ✓`, "success");
+  } catch(e) {
+    toast(e.message, "error");
+  }
+}
+
+// ── Delete role ───────────────────────────────────────────────────────────────
+async function deleteRole(ev, id, name) {
+  ev.stopPropagation();
+  if (!confirm(`Delete role "${name}"? This cannot be undone.`)) return;
+  try {
+    await api("DELETE", `/api/v1/control/roles/${id}`);
+    roles = roles.filter(r => r.id !== id);
+    if (activeRoleId === id) {
+      activeRoleId = null;
+      document.getElementById("editor-header").style.display = "none";
+      document.getElementById("editor-body").innerHTML = `<div class="empty-state"><div class="icon">🛡️</div><p>Select a role to edit its permissions.</p></div>`;
+    }
+    renderRoleList();
+    toast(`Role "${name}" deleted`, "success");
+  } catch(e) {
+    toast(e.message, "error");
+  }
+}
+
+// ── Seed defaults ─────────────────────────────────────────────────────────────
+async function seedDefaults() {
+  try {
+    const r = await api("POST", "/api/v1/control/roles/seed");
+    toast(`Seeded: ${r.permissions_created} perms, ${r.roles_created} roles`, "success");
+    await Promise.all([loadPermissions(), loadRoles()]);
+    renderRoleList();
+    if (activeRoleId) {
+      const role = roles.find(r => r.id === activeRoleId);
+      if (role) renderEditor(role);
+    }
+  } catch(e) {
+    toast(e.message, "error");
+  }
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+let _toastTimer;
+function toast(msg, type = "success") {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.className = `show ${type}`;
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.className = "", 3000);
+}
+
+function esc(str) {
+  return String(str).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+}
+
+// ── Theme sync ────────────────────────────────────────────────────────────────
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+}
+(function () {
+  const stored = localStorage.getItem('wf_theme') ||
+    (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  applyTheme(stored);
+})();
+window.addEventListener('message', e => {
+  if (e.data && e.data.type === 'wf-theme') applyTheme(e.data.theme);
+});
+</script>
+</body>
+</html>
