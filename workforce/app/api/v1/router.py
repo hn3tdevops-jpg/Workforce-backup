@@ -4,6 +4,7 @@ V1 API router — aggregates all planes.
 from fastapi import APIRouter
 
 from app.api.v1.auth.routes import router as auth_router
+from app.api.v1.auth.bootstrap import router as bootstrap_router
 from app.api.v1.control.routes import router as control_router
 from app.api.v1.tenant.routes import router as tenant_router
 from app.api.v1.worker.routes import router as worker_router
@@ -34,6 +35,7 @@ from app.api.v1.hkops.routes import (
 
 v1_router = APIRouter()
 v1_router.include_router(auth_router)
+v1_router.include_router(bootstrap_router)
 v1_router.include_router(control_router)
 v1_router.include_router(tenant_router)
 v1_router.include_router(worker_router)
