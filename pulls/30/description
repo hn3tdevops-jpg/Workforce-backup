@@ -1,0 +1,19 @@
+# Summary
+
+Adds repository-level guidance files so Copilot and contributors have consistent, project-aware instructions for backend, frontend, and tests.
+
+# Files added
+- .github/copilot-instructions.md — repository-level Copilot guidance (project identity, core stack, multi-tenant rules, backend patterns, data modeling, testing, and “avoid” list).
+- .github/instructions/backend.instructions.md — guidance for Python backend files under app/**/*.py (architecture, RBAC, scoping, service-layer rules, schema/model rules, tests).
+- .github/instructions/tests.instructions.md — test guidance applied to tests/**/*.py (focus, tenant/location isolation, fixtures).
+- .github/instructions/frontend.instructions.md — frontend/template guidance (dark-mode, navigation, context visibility, reusable components).
+- AGENTS.md — repository-level agent/assistant mission and execution rules (roadmap alignment, safety rules, testing and output expectations).
+
+# Intent
+
+Centralize repository-level behavioral and implementation guidance so contributors and automated assistants produce changes that align with HN3T_MASTER_PLAN.md and the repo’s multi-tenant, location-aware constraints.
+
+# Next steps
+- Convert this PR to Draft (recommended while reviewing wording).
+- Review the files for any wording edits.
+- Request reviewers and merge when ready.
