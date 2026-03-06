@@ -42,6 +42,8 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 | `SECRET_KEY`                   | *(placeholder)*          | **Change in production** — 256-bit random string |
 | `ACCESS_TOKEN_EXPIRE_MINUTES`  | `60`                     | JWT access token lifetime                        |
 | `REFRESH_TOKEN_EXPIRE_DAYS`    | `7`                      | Refresh token lifetime                           |
+| `ENABLE_BOOTSTRAP`             | `false`                  | Enable the one-time superadmin bootstrap endpoint |
+| `BOOTSTRAP_TOKEN`              | *(unset)*                | Secret token required by the bootstrap endpoint  |
 
 Set these in `.env` (local) or via the **PythonAnywhere → Files → .env** or via the
 Web tab environment variable editor.
@@ -95,6 +97,34 @@ python -m app.cli.main purge
 | POST   | `/api/v1/auth/refresh` | Refresh access token |
 | POST   | `/api/v1/auth/logout` | Revoke refresh token |
 | POST   | `/api/v1/auth/register` | Self-register |
+| POST   | `/api/v1/auth/bootstrap` | One-time superadmin bootstrap (requires feature flag + token) |
+
+#### Bootstrap endpoint
+
+The bootstrap endpoint creates the **initial superadmin account** when the database
+contains no users.  It is disabled by default and protected by a one-time token.
+
+```bash
+# 1. Generate a strong random token
+export BOOTSTRAP_TOKEN="$(openssl rand -hex 24)"
+
+# 2. Enable the endpoint (set in .env or shell before starting the server)
+export ENABLE_BOOTSTRAP=true
+
+# 3. Start the server, then POST to the endpoint
+curl -X POST http://localhost:8000/api/v1/auth/bootstrap \
+     -H "Content-Type: application/json" \
+     -H "X-Bootstrap-Token: $BOOTSTRAP_TOKEN" \
+     -d '{"email":"admin@example.com","password":"ChangeMeNow!","first_name":"Super","last_name":"Admin"}'
+
+# 4. After the superadmin is created, disable the endpoint
+export ENABLE_BOOTSTRAP=false
+# (or remove it from .env and restart the server)
+```
+
+> **Security note:** `ENABLE_BOOTSTRAP` defaults to `false`.  Set it to `true` only
+> during initial provisioning, then turn it off immediately.  Never expose
+> `BOOTSTRAP_TOKEN` in source control or logs.
 
 ### V1 Timeclock (worker)
 
