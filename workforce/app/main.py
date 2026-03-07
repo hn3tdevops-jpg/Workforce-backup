@@ -1,5 +1,6 @@
 import logging
 import os
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
@@ -51,15 +52,26 @@ app.include_router(demo.router)
 app.include_router(v1_router)
 app.include_router(console_router)
 
-app.mount("/assets", StaticFiles(directory="/home/hn3t/workforce/frontend/dist/assets"), name="frontend-assets")
+# Compute frontend paths relative to this repository for portability
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+FRONTEND_DIST = PROJECT_ROOT / "frontend" / "dist"
+
+# Mount frontend static files at /static (prefer assets/ if present)
+if FRONTEND_DIST.exists() and FRONTEND_DIST.is_dir():
+    assets_dir = FRONTEND_DIST / "assets"
+    if assets_dir.exists() and assets_dir.is_dir():
+        app.mount("/static", StaticFiles(directory=str(assets_dir)), name="frontend-static")
+    else:
+        app.mount("/static", StaticFiles(directory=str(FRONTEND_DIST), html=True), name="frontend-static")
 
 
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 def ui(request: Request):
-    frontend_index = "/home/hn3t/workforce/frontend/dist/index.html"
-    with open(frontend_index, "r") as f:
-        content = f.read()
-    return HTMLResponse(content=content)
+    index_file = FRONTEND_DIST / "index.html"
+    if index_file.exists():
+        return HTMLResponse(content=index_file.read_text(encoding="utf-8"))
+    # Fallback to template rendering when built UI not present
+    return templates.TemplateResponse("index.html", {"request": request})
 
 
 @app.get("/roles/", response_class=HTMLResponse, include_in_schema=False)
