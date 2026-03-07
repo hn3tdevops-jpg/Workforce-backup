@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -71,6 +71,24 @@ def ui(request: Request):
     if index_file.exists():
         return HTMLResponse(content=index_file.read_text(encoding="utf-8"))
     # Fallback to template rendering when built UI not present
+    return templates.TemplateResponse("index.html", {"request": request})
+
+
+@app.get("/{full_path:path}", response_class=HTMLResponse, include_in_schema=False)
+def spa_fallback(request: Request, full_path: str):
+    """Fallback route for SPA client-side routing. Serves files from the built frontend when present
+    and otherwise returns index.html so the client router can handle the path.
+    """
+    # If the requested path exists as a file in the dist directory, serve it directly.
+    candidate = FRONTEND_DIST / full_path
+    if candidate.exists() and candidate.is_file():
+        return FileResponse(str(candidate))
+
+    index_file = FRONTEND_DIST / "index.html"
+    if index_file.exists():
+        return HTMLResponse(content=index_file.read_text(encoding="utf-8"))
+
+    # Final fallback to template rendering when built UI not present
     return templates.TemplateResponse("index.html", {"request": request})
 
 
