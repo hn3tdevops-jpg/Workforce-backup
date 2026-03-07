@@ -3,6 +3,7 @@ import os
 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from app.api.routes import audit, business, demo, employee, health, scheduling, training
@@ -50,10 +51,15 @@ app.include_router(demo.router)
 app.include_router(v1_router)
 app.include_router(console_router)
 
+app.mount("/assets", StaticFiles(directory="/home/hn3t/workforce/frontend/dist/assets"), name="frontend-assets")
+
 
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 def ui(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    frontend_index = "/home/hn3t/workforce/frontend/dist/index.html"
+    with open(frontend_index, "r") as f:
+        content = f.read()
+    return HTMLResponse(content=content)
 
 
 @app.get("/roles/", response_class=HTMLResponse, include_in_schema=False)
