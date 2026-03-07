@@ -1,10 +1,12 @@
 ---
-applyTo: "app/**/*.py"
+applyTo:
+  - "app/**/*.py"
+  - "workforce/app/**/*.py"
 ---
 
 # Backend Python Instructions
 
-For files under `app/**/*.py`, follow these rules.
+For files under `app/**/*.py` or `workforce/app/**/*.py`, follow these rules.
 
 ## Architecture
 - Follow FastAPI + SQLAlchemy + Pydantic v2 conventions already used in the repository.
