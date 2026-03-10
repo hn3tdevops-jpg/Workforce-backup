@@ -14,6 +14,20 @@ This document is the single cohesive architecture plan combining:
 - Idempotency & Offline Support
 - Deployment & Phase Build Order
 
+---
+
+## 📋 BASELINE STATUS
+
+The table below reflects implementation already present in **this repository**. Use it to avoid duplicating work.
+
+| Phase | Area | Status | Key Files |
+|-------|------|--------|-----------|
+| Phase 2 | Authentication & Authorization | ✅ IMPLEMENTED (core) | [`workforce/app/core/security.py`](workforce/app/core/security.py), [`workforce/app/api/v1/auth/routes.py`](workforce/app/api/v1/auth/routes.py) |
+
+> **Note:** Phase 2 baseline exists in this repo — treat as implemented unless you are working in a new codebase.
+
+---
+
 ======================================================================
 FULL ARCHITECTURE SPECIFICATION
 ======================================================================
@@ -350,6 +364,33 @@ SECTION 9 — IMPLEMENTATION ORDER
 8. Collapsible nav
 9. Dark theme tokens
 10. Audit logging hardening
+
+----------------------------------------------------------------------
+PHASE 2 — AUTHENTICATION & AUTHORIZATION
+----------------------------------------------------------------------
+
+**Status: IMPLEMENTED / PARTIAL — core JWT auth and auth endpoints present in this repository.**
+
+The following items are already implemented in the `workforce/` backend:
+
+- [x] JWT access token creation and verification
+- [x] JWT refresh token creation
+- [x] Auth endpoints: `POST /api/v1/auth/token` (login), `POST /api/v1/auth/register`, `POST /api/v1/auth/refresh`
+- [x] Refresh token storage (hashed, stored in database via `RefreshToken` model)
+
+**Implementation files:**
+- [`workforce/app/core/security.py`](workforce/app/core/security.py) — JWT helpers, token creation/verification, password hashing
+- [`workforce/app/api/v1/auth/routes.py`](workforce/app/api/v1/auth/routes.py) — Login, register, refresh, logout endpoints
+- [`workforce/app/core/config.py`](workforce/app/core/config.py) — Settings reference (SECRET_KEY, token expiry, etc.)
+
+**Remaining / optional items:**
+
+- [ ] Harden refresh-token rotation policy (single-use, revocation on reuse)
+- [ ] Add integration tests for full refresh-token rotation flow
+- [ ] Audit and document all auth-related environment variables in README
+- [ ] Consider short-lived access token + sliding refresh window for production hardening
+
+> **Recommendation for contributors:** If Phase 2 in this plan is being used to drive a **new or separate codebase**, add an explicit scope note at the start of your implementation work to avoid confusion with the baseline already present here.
 
 ======================================================================
 SECTION 10 — HARD GUARDRAILS
