@@ -58,3 +58,7 @@ poetry run pytest tests/ -v
 | `DATABASE_URL` | Async SQLAlchemy DB URL              | `sqlite+aiosqlite:///./workforce.db` |
 | `APP_ENV`      | Application environment              | `development`                  |
 | `SECRET_KEY`   | Secret key for token signing         | `changeme` (**change this!**)  |
+
+## HN3T Master Plan
+
+The canonical project roadmap lives in [HN3T_MASTER_PLAN.md](./HN3T_MASTER_PLAN.md). Note: HN3T_MASTER_PLAN.md is the canonical roadmap; MASTER_PLAN.md is kept only for backward-compatibility.

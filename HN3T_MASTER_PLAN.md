@@ -1,3 +1,5 @@
+> NOTE: This document is the canonical HN3T project roadmap for this repository. A legacy copy named MASTER_PLAN.md exists for backward compatibility; that file now redirects to this canonical file. Contributors should follow HN3T_MASTER_PLAN.md to avoid duplicated/competing master plans.
+
 # 🏗 UNIFIED WORKFORCE + HOSPITABLE OPS MASTER ARCHITECTURE
 
 This document is the single cohesive architecture plan combining:
