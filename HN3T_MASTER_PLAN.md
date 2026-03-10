@@ -785,6 +785,28 @@ These rules are validated in service layer, not routes.
 - POST `/auth/login`
 - GET  `/me`
 
+---
+
+### Phase 2 — Authentication & Authorization (CURRENT STATUS: PARTIAL / IMPLEMENTED)
+
+Status: The core JWT auth flow and auth endpoints are already implemented in this repository. See:
+- workforce/app/core/security.py (JWT helpers, token creation/verification)
+- workforce/app/api/v1/auth/routes.py (login/register/refresh endpoints)
+
+Action: Mark the following checklist items as COMPLETE:
+- [x] JWT access + refresh token logic
+- [x] Auth endpoints (login / refresh / register)
+- [x] Refresh token storage (where implemented)
+
+Remaining / optional items:
+- [ ] Harden refresh-token rotation and storage to match production policy (if desired)
+- [ ] Add integration tests for refresh-token rotation (optional)
+- [ ] Audit and document auth config and env variables in README
+
+Implementation note: If Phase 2 in this master plan was intended for a different/new codebase, add an explicit note to avoid confusion: "Note: phase tasks here are scoped to new modules. Existing `workforce/` implementation is considered baseline and excluded from new work."
+
+---
+
 ### Bootstrap
 - POST `/bootstrap`
   - Allowed only if **no users exist**
