@@ -20,6 +20,9 @@ def create_role(business_id: str, scope_type: str, name: str, location_id: str =
 def create_permission(key: str):
     db = SessionLocal()
     try:
+        existing = db.query(Permission).filter_by(key=key).first()
+        if existing:
+            return existing
         perm = Permission(id=str(uuid.uuid4()), key=key)
         db.add(perm)
         db.commit()

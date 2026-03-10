@@ -34,7 +34,7 @@ export default function LoginForm({ onLogin, error }: Props) {
         </h2>
 
         {error && (
-          <div style={{
+          <div role="alert" aria-live="assertive" style={{
             background: '#2d1b1b', border: '1px solid #7f1d1d', borderRadius: 4,
             padding: '0.5rem 0.75rem', marginBottom: '1rem', color: '#fca5a5', fontSize: '0.875rem',
           }}>
@@ -45,22 +45,26 @@ export default function LoginForm({ onLogin, error }: Props) {
         <label style={{ display: 'block', marginBottom: '1rem' }}>
           <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginBottom: 4 }}>Email</span>
           <input
+            id="email" name="email"
             type="email" value={email} onChange={e => setEmail(e.target.value)}
-            required autoFocus
+            required autoFocus autoComplete="email"
             style={inputStyle}
+            aria-label="Email"
           />
         </label>
 
         <label style={{ display: 'block', marginBottom: '1.5rem' }}>
           <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginBottom: 4 }}>Password</span>
           <input
+            id="password" name="password"
             type="password" value={password} onChange={e => setPassword(e.target.value)}
-            required
+            required autoComplete="current-password"
             style={inputStyle}
+            aria-label="Password"
           />
         </label>
 
-        <button type="submit" disabled={busy} style={{
+        <button type="submit" disabled={busy} aria-busy={busy} aria-disabled={busy} style={{
           width: '100%', padding: '0.6rem', background: busy ? '#374151' : '#3b82f6',
           color: '#fff', border: 'none', borderRadius: 4, cursor: busy ? 'not-allowed' : 'pointer',
           fontSize: '0.95rem', fontWeight: 500,

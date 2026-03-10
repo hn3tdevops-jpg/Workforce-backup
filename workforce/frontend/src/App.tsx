@@ -3,6 +3,7 @@ import LoginForm from './components/LoginForm'
 import BusinessSelector from './components/BusinessSelector'
 import { useAuth } from './hooks/useAuth'
 import { api } from './api'
+import Dashboard from './components/Dashboard'
 
 interface Membership {
   business_id: string
@@ -99,9 +100,7 @@ export default function App() {
             <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
               Business ID: <code style={{ color: '#60a5fa' }}>{selectedBiz}</code>
             </p>
-            <p style={{ color: '#64748b', fontSize: '0.85rem' }}>
-              Dashboard widgets and feature modules will load here.
-            </p>
+            <Dashboard businessId={selectedBiz!} businessName={activeMembership?.business_name ?? ''} />
           </div>
         )}
       </main>

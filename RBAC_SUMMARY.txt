@@ -1,0 +1,159 @@
+================================================================================
+WORKFORCE RBAC IMPLEMENTATION - QUICK REFERENCE
+================================================================================
+
+ACTIVE RBAC MODELS (Actually Used):
+───────────────────────────────────────────────────────────────────────────────
+✅ Permission              - Unique permission keys (e.g., "schedule:read")
+✅ BizRole                 - Roles with scope_type (BUSINESS|LOCATION), location_id, priority
+✅ BizRolePermission       - Links roles to permissions
+✅ Membership              - User→Business binding (tenant scoping)
+✅ MembershipRole          - Business-scoped role assignments (with job_title_label)
+✅ MembershipLocationRole  - Location-scoped role assignments (with job_title_label)
+✅ AuditEvent              - Audit trail infrastructure
+
+ORPHANED TABLES (Created but Never Used):
+───────────────────────────────────────────────────────────────────────────────
+❌ roles                      - Duplicate of BizRole (unused)
+❌ role_permissions           - Duplicate of BizRolePermission (unused)
+❌ user_role_assignments      - Duplicate of Membership+MembershipRole (unused)
+
+
+MASTER PLAN REQUIREMENTS - IMPLEMENTATION STATUS
+───────────────────────────────────────────────────────────────────────────────
+
+Required Field              Location              Status
+─────────────────────────────────────────────────────────────────────────────
+scope_type (BUSINESS|LOCATION)  BizRole.scope_type      ✅ DONE
+location_id (for LOCATION roles) BizRole.location_id     ✅ DONE
+priority on roles               BizRole.priority        ✅ DONE
+job_title_label                 MembershipRole/LocationRole.job_title_label  ✅ DONE
+created_by_user_id              MembershipRole/LocationRole.created_by_user_id  ✅ DONE
+
+Per-location RBAC support       MembershipLocationRole table  ✅ DONE
+Job title purely display-based  _derive_job_title() function  ✅ DONE
+RBAC enforcement at routes      require_permission() dependency  ✅ DONE
+
+Location owner delegation       rbac.location_roles.manage permission  ❌ MISSING
+Location owner delegation       rbac.location_assignments.manage perm  ❌ MISSING
+Effective permissions API       GET /me/effective-permissions endpoint  ❌ MISSING
+Audit RBAC changes              AuditEvent entries for role changes    ❌ MISSING
+Prevent last location owner     Guard in set_member_location_roles()   ❌ MISSING
+
+
+KEY FILES
+───────────────────────────────────────────────────────────────────────────────
+Models:
+  /app/models/identity.py           - BizRole, MembershipRole, MembershipLocationRole, Permission
+  /app/models/business.py            - Business, Location (tenant scoping)
+
+RBAC Enforcement:
+  /app/core/auth_deps.py            - require_permission(), _get_user_permissions()
+  /app/core/permissions.py          - Legacy permission helper (minimal)
+
+Routes:
+  /api/v1/tenant/routes.py          - RBAC management endpoints
+  /api/v1/control/routes.py         - SuperAdmin + system templates
+
+Seeds/Services:
+  /app/services/roles_seed.py       - DEFAULT_PERMISSIONS, DEFAULT_ROLES
+  /app/cli/seed_rbac.py             - CLI seed command
+
+Migrations:
+  alembic/versions/fff13ba5ecee_identity_rbac_agents.py     - Initial RBAC (BizRole, etc.)
+  alembic/versions/b7c2e4f1a9d3_per_location_rbac.py        - Add scope_type, location_id, priority
+  alembic/versions/zz_add_rbac_tables.py                    - Create orphaned tables (unused)
+
+
+AUTHORIZATION RULE (IMPLEMENTED)
+───────────────────────────────────────────────────────────────────────────────
+User can perform action X at location L if:
+
+  EXISTS assignment WHERE:
+    (scope_type = 'BUSINESS' AND role has permission_key)
+    OR
+    (scope_type = 'LOCATION' AND location_id = L AND role has permission_key)
+
+Code: auth_deps.py lines 143-178 (_get_user_permissions)
+      auth_deps.py lines 181-213 (_get_user_location_permissions)
+
+
+RBAC ENDPOINTS (Tenant)
+───────────────────────────────────────────────────────────────────────────────
+GET  /api/v1/tenant/{business_id}/roles
+POST /api/v1/tenant/{business_id}/roles
+POST /api/v1/tenant/{business_id}/roles/provision
+POST /api/v1/tenant/{business_id}/roles/{role_id}/permissions
+
+GET  /api/v1/tenant/{business_id}/members
+POST /api/v1/tenant/{business_id}/members
+GET  /api/v1/tenant/{business_id}/members/{membership_id}/profile
+PATCH /api/v1/tenant/{business_id}/members/{membership_id}/profile
+PUT  /api/v1/tenant/{business_id}/members/{membership_id}/roles
+PATCH /api/v1/tenant/{business_id}/members/{membership_id}/status
+PATCH /api/v1/tenant/{business_id}/members/{membership_id}/remove
+
+GET  /api/v1/tenant/{business_id}/members/{membership_id}/location-roles
+PUT  /api/v1/tenant/{business_id}/members/{membership_id}/location-roles
+
+
+PERMISSION EXAMPLES (From roles_seed.py)
+───────────────────────────────────────────────────────────────────────────────
+schedule:read           - View schedules and shifts
+schedule:write          - Create and edit schedules and shifts
+members:read            - View team members
+members:write           - Invite and manage team members
+roles:read              - View roles and permissions
+roles:write             - Create and edit roles
+locations:read          - View locations
+locations:write         - Edit locations
+owner:manage            - Create locations and perform owner-level operations
+timeclock:manage        - Clock in/out and manage all timeclock entries
+marketplace:read        - Browse marketplace shift listings
+marketplace:write       - Post and manage marketplace listings
+marketplace:manage      - Manage job postings, swap requests, and coverage
+messaging:read          - View messaging channels and messages
+messaging:write         - Send messages and create channels
+messaging:broadcast     - Post to announcement channels and broadcast
+messaging:manage        - Manage channels, members, and API keys
+report:read             - View reports and analytics
+training:read           - View training materials
+training:write          - Create and edit training materials
+
+⚠️ NOTE: Missing rbac.location_roles.manage and rbac.location_assignments.manage
+
+
+DEFAULT ROLES
+───────────────────────────────────────────────────────────────────────────────
+Manager (priority 80)     - All permissions except owner:manage
+Supervisor (priority 70)  - Read + limited write (no role management)
+Employee (priority 50)    - Basic read + timeclock + messaging
+Viewer (priority 10)      - Read-only (schedule + reports)
+
+
+GAPS SUMMARY
+───────────────────────────────────────────────────────────────────────────────
+CRITICAL:
+  ❌ Location owner delegation not enforced (no location-specific permission checks)
+  ❌ Audit trail not written for RBAC changes
+  ❌ No endpoint to fetch computed effective permissions
+
+IMPORTANT:
+  ⚠️ Orphaned tables cause confusion (two RBAC implementations)
+  ⚠️ Generic "roles:write" instead of location-specific delegation perms
+  ⚠️ No guard to prevent removing last location owner
+
+MINOR:
+  ⚠️ Permission key naming inconsistent with master plan format
+
+
+NEXT STEPS
+───────────────────────────────────────────────────────────────────────────────
+1. Add location-owner delegation permissions to seed (rbac.location_roles.manage, etc.)
+2. Add permission checks in set_member_location_roles() endpoint
+3. Add audit logging for all RBAC changes
+4. Create /api/v1/tenant/{business_id}/me/permissions endpoint
+5. Add constraint to prevent invalid scope_type/location_id combinations
+6. Consider removing orphaned tables or consolidating schema
+
+================================================================================

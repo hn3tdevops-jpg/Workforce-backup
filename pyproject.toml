@@ -4,6 +4,11 @@ version = "0.1.0"
 description = "Workforce multi-tenant suite"
 authors = ["hn3tdevops-jpg"]
 readme = "README.md"
+packages = [
+  { include = "app" },
+  { include = "hospitable" },
+  { include = "hospitable-ops" }
+]
 
 [tool.poetry.dependencies]
 python = "^3.12"

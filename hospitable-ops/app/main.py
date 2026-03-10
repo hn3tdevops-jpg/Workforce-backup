@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from pathlib import Path
-from app.api.routes import rbac, integrations, idempotency, auto_assign, housekeeping, me
+from app.api.routes import rbac, integrations, idempotency, auto_assign, housekeeping, me, inspections, issues
 from app.middleware.idempotency import IdempotencyMiddleware
 
 app = FastAPI(title="hospitable-ops (skeleton)")
@@ -12,6 +12,8 @@ app.include_router(integrations.router)
 app.include_router(idempotency.router)
 app.include_router(auto_assign.router)
 app.include_router(housekeeping.router)
+app.include_router(inspections.router)
+app.include_router(issues.router)
 app.include_router(me.router)
 
 # Serve built frontend (if present) at /ui

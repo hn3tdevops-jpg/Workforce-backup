@@ -33,6 +33,8 @@ from app.api.v1.hkops.routes import (
     control_router as hk_control_router,
 )
 
+from app.api.v1.me.routes import router as me_router
+
 v1_router = APIRouter()
 v1_router.include_router(auth_router)
 v1_router.include_router(bootstrap_router)
@@ -46,6 +48,9 @@ v1_router.include_router(mkt_public)
 v1_router.include_router(mkt_worker)
 v1_router.include_router(mkt_tenant)
 v1_router.include_router(schedule_router)
+
+# Expose a /api/v1/me/businesses endpoint for the business selector UI
+v1_router.include_router(me_router)
 
 v1_router.include_router(dash_control_router)
 v1_router.include_router(dash_tenant_router)
