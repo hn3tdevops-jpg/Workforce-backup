@@ -176,7 +176,7 @@
         <div id="tab-register" style="display:none">
           <div class="mb-3"><label class="form-label small fw-semibold">Email</label><input type="email" class="form-control" id="reg-email"></div>
           <div class="mb-3"><label class="form-label small fw-semibold">Password</label><input type="password" class="form-control" id="reg-password"></div>
-          <div class="mb-4 form-check"><input type="checkbox" class="form-check-input" id="reg-superadmin"><label class="form-check-label small" for="reg-superadmin">Superadmin account</label></div>
+          
           <button class="btn btn-accent w-100" onclick="doRegister()"><i class="bi bi-person-plus me-2"></i>Create Account</button>
           <div id="reg-err" class="text-danger small mt-2"></div>
         </div>
@@ -2078,7 +2078,6 @@ async function doRegister() {
     await api('POST', '/api/v1/auth/register', {
       email: document.getElementById('reg-email').value,
       password: document.getElementById('reg-password').value,
-      is_superadmin: document.getElementById('reg-superadmin').checked,
     });
     toast('Account created — sign in now');
     document.querySelector('[data-tab="login"]').click();

@@ -192,6 +192,8 @@ def search_postings(
         JobPosting.deleted_at.is_(None),
     )
     if business_id:
+        stmt = stmt.where(JobPosting.business_id == business_id)
+    if role_name:
         stmt = stmt.where(JobPosting.role_name == role_name)
     if shift_date:
         stmt = stmt.where(JobPosting.shift_date == shift_date)
