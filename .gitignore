@@ -10,3 +10,15 @@ build/
 # editor swap files
 *.swp
 .*.swp
+
+# Python
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+*.pyo
+# Runtime artifacts
+*.db
+# Node
+.next/
