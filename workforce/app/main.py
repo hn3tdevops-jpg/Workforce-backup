@@ -55,40 +55,67 @@ app.include_router(console_router)
 # Compute frontend paths relative to this repository for portability
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 FRONTEND_DIST = PROJECT_ROOT / "frontend" / "dist"
+FRONTEND_DEV_INDEX = PROJECT_ROOT / "frontend" / "index.html"
 
 # Mount frontend static files at /static (prefer assets/ if present)
+# Prefer serving the built frontend if present; otherwise expose the dev frontend directory
 if FRONTEND_DIST.exists() and FRONTEND_DIST.is_dir():
     assets_dir = FRONTEND_DIST / "assets"
     if assets_dir.exists() and assets_dir.is_dir():
         app.mount("/static", StaticFiles(directory=str(assets_dir)), name="frontend-static")
     else:
         app.mount("/static", StaticFiles(directory=str(FRONTEND_DIST), html=True), name="frontend-static")
+else:
+    # Expose the frontend directory so the dev index.html and /src assets can be served directly
+    dev_frontend_dir = PROJECT_ROOT / "frontend"
+    if dev_frontend_dir.exists() and dev_frontend_dir.is_dir():
+        app.mount("/static", StaticFiles(directory=str(dev_frontend_dir), html=True), name="frontend-static")
 
 
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 def ui(request: Request):
+    """Return the built frontend index.html if available; otherwise return the dev index.html
+    (useful for local development) and finally fall back to server-side template.
+    """
+    # 1) Built production dist
     index_file = FRONTEND_DIST / "index.html"
     if index_file.exists():
         return HTMLResponse(content=index_file.read_text(encoding="utf-8"))
-    # Fallback to template rendering when built UI not present
+
+    # 2) Vite dev build index (unbuilt /src-based entry)
+    if FRONTEND_DEV_INDEX.exists():
+        return HTMLResponse(content=FRONTEND_DEV_INDEX.read_text(encoding="utf-8"))
+
+    # 3) Fallback to server-side template rendering
     return templates.TemplateResponse("index.html", {"request": request})
 
 
 @app.get("/{full_path:path}", response_class=HTMLResponse, include_in_schema=False)
 def spa_fallback(request: Request, full_path: str):
     """Fallback route for SPA client-side routing. Serves files from the built frontend when present
-    and otherwise returns index.html so the client router can handle the path.
+    otherwise tries to serve files from the dev frontend directory, and finally returns index.html
+    so the client router can handle the path.
     """
-    # If the requested path exists as a file in the dist directory, serve it directly.
+    # 1) If the requested path exists as a file in the dist directory, serve it directly.
     candidate = FRONTEND_DIST / full_path
     if candidate.exists() and candidate.is_file():
         return FileResponse(str(candidate))
 
+    # 2) If the requested path exists in the dev frontend dir, serve it
+    dev_candidate = PROJECT_ROOT / "frontend" / full_path
+    if dev_candidate.exists() and dev_candidate.is_file():
+        return FileResponse(str(dev_candidate))
+
+    # 3) If built index.html exists, serve it (SPA entry)
     index_file = FRONTEND_DIST / "index.html"
     if index_file.exists():
         return HTMLResponse(content=index_file.read_text(encoding="utf-8"))
 
-    # Final fallback to template rendering when built UI not present
+    # 4) If dev index.html exists, serve that
+    if FRONTEND_DEV_INDEX.exists():
+        return HTMLResponse(content=FRONTEND_DEV_INDEX.read_text(encoding="utf-8"))
+
+    # 5) Final fallback to template rendering when built UI not present
     return templates.TemplateResponse("index.html", {"request": request})
 
 

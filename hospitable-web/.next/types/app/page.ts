@@ -1,4 +1,4 @@
-// File: /home/hn3t/hospitable-web/app/page.tsx
+// File: /home/hn3t/projects_active/hospitable-web/app/page.tsx
 import * as entry from '../../../app/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

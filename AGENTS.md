@@ -1,75 +1,147 @@
-# AGENTS.md
+# Workforce / Hospitable Repo Cleanup Instructions
 
-## Mission
-Implement the HN3T Workforce / Hospitable Ops platform safely and incrementally, using `HN3T_MASTER_PLAN.md` as the primary roadmap.
+## Objective
+Refactor and clean the repository into a clear monorepo structure for hospitality operations, without deleting working business logic.
 
-## Primary planning source
-Before making architectural or feature decisions, read and align with:
-- `HN3T_MASTER_PLAN.md`
+## Primary goals
+1. Remove clutter from repo root.
+2. Separate runtime artifacts from source code.
+3. Standardize Python backend layout.
+4. Isolate frontend/web code from backend code.
+5. Preserve all existing logic, configs, tests, and docs.
+6. Make the repo easier to run, test, and extend.
 
-Also inspect nearby existing code before introducing new patterns.
+## Required end-state structure
 
-## Operating mode
-- Prefer small, reviewable, production-safe changes.
-- Implement one complete feature slice at a time when possible.
-- Reuse existing patterns, modules, and naming conventions.
-- Avoid speculative redesigns unless explicitly requested.
+projects_active/
+├── apps/
+│   ├── api/              # FastAPI backend
+│   ├── web/              # frontend / Next.js / React if present
+│   └── ops/              # optional operations-specific app if needed
+├── packages/
+│   ├── workforce/        # workforce domain package
+│   ├── hospitable/       # hospitable integration package
+│   └── rbac/             # shared RBAC package if appropriate
+├── docs/
+│   ├── architecture/
+│   ├── rbac/
+│   └── plans/
+├── scripts/
+├── tests/
+├── alembic/
+├── pyproject.toml
+├── README.md
+└── .gitignore
 
-## Execution priorities
-Prioritize work in this order:
-1. correctness
-2. tenant and location safety
-3. RBAC integrity
-4. maintainability
-5. consistency with repository patterns
-6. speed
+## Mandatory rules
+- Do NOT delete business logic unless it is clearly duplicate generated junk.
+- Do NOT delete tests unless they are obviously broken duplicates and replaced with equivalent tests.
+- Do NOT delete docs; move and organize them.
+- Do NOT commit runtime artifacts.
+- Do NOT keep virtualenvs, sqlite db files, egg-info, logs, __pycache__, or node_modules in tracked source layout.
+- Keep imports working; update imports after moving files.
+- Update pyproject.toml to reflect the new package layout.
+- Preserve alembic and database migration functionality.
+- Preserve FastAPI entrypoint and ensure there is one canonical app entrypoint.
 
-## Mandatory safety rules
-- Never weaken tenant isolation.
-- Never weaken location scoping.
-- Never bypass RBAC for convenience.
-- Never hardcode secrets or credentials.
-- Never replace stable architecture with a new framework unless explicitly requested.
-- Never make destructive schema changes unless explicitly requested.
+## Cleanup tasks
 
-## Implementation behavior
-When asked to build or change something:
-1. inspect the relevant files first
-2. map the request to the relevant section of `HN3T_MASTER_PLAN.md`
-3. implement the smallest complete change that solves the task
-4. update tests when appropriate
-5. keep code easy to review
+### A. Runtime artifact cleanup
+Identify and remove from tracked source structure:
+- venv/
+- .venv/
+- *.egg-info/
+- __pycache__/
+- .pytest_cache/
+- .mypy_cache/
+- .ruff_cache/
+- *.log
+- *.db
+- node_modules/
+- .next/
+- dist/
+- build/
 
-## Backend expectations
-- Keep API route handlers thin.
-- Put business logic into services or equivalent domain modules.
-- Use Pydantic v2 schemas explicitly.
-- Use Alembic for schema changes.
-- Respect SQLAlchemy and FastAPI patterns already present in the repo.
+Update .gitignore to include all of the above.
 
-## Database and migration rules
-- Treat schema work as production-grade work.
-- Preserve data integrity with constraints and indexes where appropriate.
-- Consider ownership, lifecycle, and auditability for every new entity.
-- Avoid duplicate tables or near-duplicate concepts.
+### B. Root directory cleanup
+Move documentation files into:
+- docs/plans/
+- docs/rbac/
+- docs/architecture/
 
-## Scope awareness
-For features involving users, employees, schedules, housekeeping, inspections, inventory, rooms, maintenance, vendors, reporting, or admin:
-- verify tenant scope
-- verify location scope
-- verify permission scope
-- verify audit implications
+Examples:
+- HN3T_MASTER_PLAN.md -> docs/plans/
+- MASTER_PLAN.md -> docs/plans/
+- RBAC_AUDIT_INDEX.md -> docs/rbac/
+- RBAC_CODE_SNIPPETS.md -> docs/rbac/
+- RBAC_IMPLEMENTATION_AUDIT.md -> docs/rbac/
+- RBAC_SUMMARY.txt -> docs/rbac/
 
-## Testing expectations
-For non-trivial changes:
-- add or update tests
-- cover at least one success case
-- cover at least one failure or authorization case
-- verify scope isolation where relevant
+### C. Backend normalization
+If `app/` is the real FastAPI application, keep it as the canonical backend app under:
+- apps/api/app/
 
-## Output expectations
-After making changes, summarize:
-- what changed
-- which files changed
-- any important assumptions
-- any follow-up work still needed
+If `workforce/` contains domain code, move it to:
+- packages/workforce/
+
+If `hospitable/` contains integration logic, move it to:
+- packages/hospitable/
+
+If `hospitable-ops/` is backend logic, merge carefully into:
+- apps/api/ or packages/hospitable/
+depending on whether it is app-specific or reusable domain/integration logic.
+
+If `hospitable-web/` is frontend code, move it to:
+- apps/web/
+
+### D. Python packaging
+Update `pyproject.toml` so editable install works with:
+- apps/api
+- packages/workforce
+- packages/hospitable
+- packages/rbac (if created)
+
+Ensure import paths are consistent and valid after refactor.
+
+### E. FastAPI structure
+Target backend structure:
+
+apps/api/
+├── app/
+│   ├── api/
+│   ├── core/
+│   ├── db/
+│   ├── models/
+│   ├── schemas/
+│   ├── services/
+│   ├── integrations/
+│   └── main.py
+
+Move code into this structure where appropriate.
+
+### F. Tests
+Keep tests under root `tests/` unless there is a strong reason to colocate.
+Fix imports after refactor.
+
+### G. Deliverables
+After refactor, produce:
+1. Updated repo tree summary in `docs/architecture/REPO_STRUCTURE.md`
+2. Updated `.gitignore`
+3. Updated `pyproject.toml`
+4. Updated `README.md` with run instructions
+5. A migration summary in `docs/architecture/REFACTOR_NOTES.md`
+
+## Required validation
+Before finishing, run:
+- python -m pytest
+- ruff check .
+- python -m compileall apps packages
+
+If commands fail, fix straightforward import/path issues and summarize any remaining blockers.
+
+## Safety constraints
+- Prefer moving files over rewriting logic.
+- Prefer minimal invasive changes.
+- Preserve existing behavior first; improve architecture second.
+- If there is ambiguity, choose the least destructive refactor.

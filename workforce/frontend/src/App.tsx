@@ -100,7 +100,7 @@ export default function App() {
             <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
               Business ID: <code style={{ color: '#60a5fa' }}>{selectedBiz}</code>
             </p>
-            <Dashboard businessId={selectedBiz!} businessName={activeMembership?.business_name ?? ''} />
+            <Dashboard businessId={selectedBiz!} businessName={activeMembership?.business_name ?? ''} isSuperadmin={user.is_superadmin} />
           </div>
         )}
       </main>

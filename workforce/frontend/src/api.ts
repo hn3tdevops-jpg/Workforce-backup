@@ -54,4 +54,14 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ refresh_token }),
     }),
+
+  // Widgets / admin endpoints
+  employeesCount: (businessId: string) =>
+    request<number>(`/api/v1/businesses/${businessId}/employees/count`),
+
+  openShiftsCount: (businessId: string) =>
+    request<number>(`/api/v1/businesses/${businessId}/shifts/open/count`),
+
+  superadminStats: () =>
+    request<{ total_businesses: number; total_users: number }>('/api/v1/admin/stats'),
 }

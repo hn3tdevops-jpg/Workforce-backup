@@ -8,6 +8,7 @@ export interface Business {
 export interface DashboardProps {
   businessId: string
   businessName: string
+  isSuperadmin?: boolean
 }
 
 export type DashboardComponent = FC<DashboardProps>
