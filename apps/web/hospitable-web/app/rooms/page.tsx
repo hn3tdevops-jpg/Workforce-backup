@@ -1,18 +1,28 @@
 "use client"
 import { useEffect, useState, useCallback } from 'react'
-import { api, RoomListItem, HousekeepingStatus, OccupancyStatus } from '../../lib/api'
-
-const LOCATION_ID = process.env.NEXT_PUBLIC_LOCATION_ID ?? 'silver-sands-main'
+import { api, getLocationId, HousekeepingStatus, OccupancyStatus } from '../../lib/api'
 
 const HK_STATUSES: HousekeepingStatus[] = ['dirty','assigned','cleaning','clean','inspect','inspected','blocked']
 const OCC_STATUSES: OccupancyStatus[] = ['vacant','occupied','checkout','stayover','ooo']
+
+interface RoomRow {
+  id: number
+  room_number: string
+  room_type: string | null
+  housekeeping_status: HousekeepingStatus
+  occupancy_status: OccupancyStatus
+  building_name?: string
+  floor_name?: string
+  sector_name?: string
+}
 
 function Badge({ value }: { value: string }) {
   return <span className={`badge badge-${value}`}>{value.replace(/_/g, ' ')}</span>
 }
 
 export default function RoomsPage() {
-  const [rooms, setRooms] = useState<RoomListItem[]>([])
+  const [locationId, setLocationId] = useState('')
+  const [rooms, setRooms] = useState<RoomRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<Set<number>>(new Set())
@@ -22,16 +32,21 @@ export default function RoomsPage() {
   const [bulkLoading, setBulkLoading] = useState(false)
   const [success, setSuccess] = useState<string | null>(null)
 
+  useEffect(() => {
+    getLocationId().then(setLocationId).catch((e) => setError(e.message))
+  }, [])
+
   const load = useCallback(() => {
+    if (!locationId) return
     setLoading(true)
     const params: Record<string, string> = {}
     if (filterHK) params.housekeeping_status = filterHK
     if (filterOcc) params.occupancy_status = filterOcc
-    api.listRooms(LOCATION_ID, params)
-      .then(setRooms)
+    api.listRooms(locationId, params)
+      .then((data) => setRooms(data as unknown as RoomRow[]))
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
-  }, [filterHK, filterOcc])
+  }, [locationId, filterHK, filterOcc])
 
   useEffect(() => { load() }, [load])
 
@@ -49,14 +64,15 @@ export default function RoomsPage() {
   const applyBulk = async () => {
     if (!bulkHK || selected.size === 0) return
     setBulkLoading(true)
+    setError(null)
     try {
       const result = await api.bulkRoomStatus({ room_ids: Array.from(selected), housekeeping_status: bulkHK })
       setSuccess(`Updated ${result.count} rooms`)
       setSelected(new Set())
       setBulkHK('')
       load()
-    } catch (e: any) {
-      setError(e.message)
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e))
     } finally {
       setBulkLoading(false)
     }
@@ -102,7 +118,7 @@ export default function RoomsPage() {
       ) : rooms.length === 0 ? (
         <div className="empty-state">
           <div className="empty-state-icon">🏨</div>
-          <div className="empty-state-text">No rooms found. Run the Silver Sands seed script to populate rooms.</div>
+          <div className="empty-state-text">No rooms found.</div>
         </div>
       ) : (
         <div className="room-grid">
@@ -116,11 +132,10 @@ export default function RoomsPage() {
               onKeyDown={(e) => e.key === 'Enter' && toggleSelect(room.id)}
             >
               <div className="room-card-number">Room {room.room_number}</div>
-              <div className="room-card-label">{room.room_label ?? room.room_type ?? ''}</div>
+              <div className="room-card-label">{room.room_type ?? ''}</div>
               <div className="room-card-badges">
                 <Badge value={room.housekeeping_status} />
                 <Badge value={room.occupancy_status} />
-                {room.maintenance_status !== 'ok' && <Badge value={room.maintenance_status} />}
               </div>
             </div>
           ))}

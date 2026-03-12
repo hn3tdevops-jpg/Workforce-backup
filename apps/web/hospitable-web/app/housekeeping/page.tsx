@@ -1,8 +1,7 @@
 "use client"
 import { useEffect, useState, useCallback } from 'react'
-import { api, TaskRead, TaskStatus, TaskType, TaskPriority } from '../../lib/api'
+import { api, getLocationId, TaskRead, TaskStatus, TaskType, TaskPriority } from '../../lib/api'
 
-const LOCATION_ID = process.env.NEXT_PUBLIC_LOCATION_ID ?? 'silver-sands-main'
 const TASK_TYPES: TaskType[] = ['clean_checkout','clean_stayover','inspection','restock','maintenance_followup']
 const PRIORITIES: TaskPriority[] = ['low','normal','high','urgent']
 
@@ -11,6 +10,7 @@ function Badge({ value }: { value: string }) {
 }
 
 export default function HousekeepingPage() {
+  const [locationId, setLocationId] = useState('')
   const [tasks, setTasks] = useState<TaskRead[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -20,32 +20,39 @@ export default function HousekeepingPage() {
   const [form, setForm] = useState({ room_id: '', task_type: 'clean_checkout' as TaskType, title: '', priority: 'normal' as TaskPriority, description: '' })
   const [creating, setCreating] = useState(false)
 
+  useEffect(() => {
+    getLocationId().then(setLocationId).catch((e) => setError(e.message))
+  }, [])
+
   const load = useCallback(() => {
+    if (!locationId) return
     setLoading(true)
     const params: Record<string, string> = {}
     if (filterStatus) params.status = filterStatus
-    api.listTasks(LOCATION_ID, params)
+    api.listTasks(locationId, params)
       .then(setTasks)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
-  }, [filterStatus])
+  }, [locationId, filterStatus])
 
   useEffect(() => { load() }, [load])
 
   const updateStatus = async (taskId: number, status: TaskStatus) => {
+    setError(null)
     try {
       await api.patchTaskStatus(taskId, status)
       setSuccess('Task updated')
       load()
-    } catch (e: any) { setError(e.message) }
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : String(e)) }
   }
 
   const createTask = async () => {
-    if (!form.title) return
+    if (!form.title || !locationId) return
     setCreating(true)
+    setError(null)
     try {
       await api.createTask({
-        location_id: LOCATION_ID,
+        location_id: locationId,
         room_id: form.room_id ? parseInt(form.room_id) : null,
         task_type: form.task_type,
         title: form.title,
@@ -56,7 +63,7 @@ export default function HousekeepingPage() {
       setShowCreate(false)
       setForm({ room_id: '', task_type: 'clean_checkout', title: '', priority: 'normal', description: '' })
       load()
-    } catch (e: any) { setError(e.message) }
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : String(e)) }
     finally { setCreating(false) }
   }
 
@@ -78,7 +85,7 @@ export default function HousekeepingPage() {
       <div className="room-board-toolbar">
         <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
           <option value="">All statuses</option>
-          {['open','assigned','in_progress','done','cancelled'].map((s) => <option key={s} value={s}>{s}</option>)}
+          {['open','assigned','in_progress','completed','cancelled'].map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
       </div>
 
@@ -88,7 +95,7 @@ export default function HousekeepingPage() {
             <div className="modal-title">Create Housekeeping Task</div>
             <div className="form-group">
               <label className="form-label">Title *</label>
-              <input className="form-input" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g. Clean Room 7 checkout" />
+              <input className="form-input" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g. Clean Room 101 checkout" />
             </div>
             <div className="form-group">
               <label className="form-label">Task Type</label>
@@ -126,22 +133,21 @@ export default function HousekeepingPage() {
         <div className="overflow-x-auto">
           <table className="data-table">
             <thead>
-              <tr><th>ID</th><th>Room</th><th>Type</th><th>Title</th><th>Priority</th><th>Status</th><th>Assigned</th><th>Actions</th></tr>
+              <tr><th>ID</th><th>Room</th><th>Type</th><th>Title</th><th>Priority</th><th>Status</th><th>Actions</th></tr>
             </thead>
             <tbody>
               {tasks.map((t) => (
                 <tr key={t.id}>
                   <td className="text-muted text-sm">#{t.id}</td>
-                  <td>{t.room_number ?? (t.room_id ? `#${t.room_id}` : '—')}</td>
+                  <td>{(t as unknown as { room_number?: string }).room_number ?? (t.room_id ? `#${t.room_id}` : '—')}</td>
                   <td className="text-sm">{t.task_type.replace(/_/g, ' ')}</td>
                   <td>{t.title}</td>
                   <td><Badge value={t.priority} /></td>
                   <td><Badge value={t.status} /></td>
-                  <td className="text-sm text-muted">{t.assigned_user_id ?? '—'}</td>
                   <td>
                     <div className="flex gap-2">
                       {t.status === 'open' && <button className="btn btn-secondary btn-sm" onClick={() => updateStatus(t.id, 'in_progress')}>Start</button>}
-                      {t.status === 'in_progress' && <button className="btn btn-primary btn-sm" onClick={() => updateStatus(t.id, 'done')}>Complete</button>}
+                      {t.status === 'in_progress' && <button className="btn btn-primary btn-sm" onClick={() => updateStatus(t.id, 'completed')}>Complete</button>}
                       {(t.status === 'open' || t.status === 'assigned') && <button className="btn btn-secondary btn-sm" onClick={() => updateStatus(t.id, 'cancelled')}>Cancel</button>}
                     </div>
                   </td>

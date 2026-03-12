@@ -4,7 +4,7 @@
  * The Next.js app proxies to the FastAPI backend in production.
  */
 
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
+const BASE = ''
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
@@ -102,9 +102,17 @@ export interface DashboardSummary {
   inspect_rooms: number
   inspected_rooms: number
   blocked_rooms: number
-  maintenance_flagged_rooms: number
+  occupied_rooms: number
+  vacant_rooms: number
+  checkout_rooms: number
   open_tasks: number
-  open_maintenance_issues: number
+  in_progress_tasks: number
+  completed_tasks: number
+  total_tasks: number
+  open_issues: number
+  in_progress_issues: number
+  resolved_issues: number
+  total_issues: number
 }
 
 export interface TaskRead {
@@ -170,6 +178,15 @@ export interface PropertySector {
   name: string
   description: string | null
   sort_order: number
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+export async function getLocationId(): Promise<string> {
+  const data = await apiFetch<{ location_id: string }>('/api/v1/hospitable/location')
+  return data.location_id
 }
 
 // ---------------------------------------------------------------------------

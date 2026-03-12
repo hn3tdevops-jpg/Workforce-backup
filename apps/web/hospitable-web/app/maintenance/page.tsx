@@ -1,8 +1,7 @@
 "use client"
 import { useEffect, useState, useCallback } from 'react'
-import { api, MaintenanceIssueRead, MaintenanceIssueStatus } from '../../lib/api'
+import { api, getLocationId, MaintenanceIssueRead, MaintenanceIssueStatus } from '../../lib/api'
 
-const LOCATION_ID = process.env.NEXT_PUBLIC_LOCATION_ID ?? 'silver-sands-main'
 const SEVERITIES = ['low','normal','high','critical']
 const ISSUE_TYPES = ['plumbing','electrical','hvac','furniture','appliance','structural','pest','other']
 
@@ -11,6 +10,7 @@ function Badge({ value }: { value: string }) {
 }
 
 export default function MaintenancePage() {
+  const [locationId, setLocationId] = useState('')
   const [issues, setIssues] = useState<MaintenanceIssueRead[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -20,32 +20,39 @@ export default function MaintenancePage() {
   const [form, setForm] = useState({ room_id: '', issue_type: 'plumbing', title: '', severity: 'normal', description: '' })
   const [creating, setCreating] = useState(false)
 
+  useEffect(() => {
+    getLocationId().then(setLocationId).catch((e) => setError(e.message))
+  }, [])
+
   const load = useCallback(() => {
+    if (!locationId) return
     setLoading(true)
     const params: Record<string, string> = {}
     if (filterStatus) params.status = filterStatus
-    api.listMaintenanceIssues(LOCATION_ID, params)
+    api.listMaintenanceIssues(locationId, params)
       .then(setIssues)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
-  }, [filterStatus])
+  }, [locationId, filterStatus])
 
   useEffect(() => { load() }, [load])
 
   const updateStatus = async (issueId: number, status: MaintenanceIssueStatus) => {
+    setError(null)
     try {
       await api.patchMaintenanceIssue(issueId, { status })
       setSuccess('Issue updated')
       load()
-    } catch (e: any) { setError(e.message) }
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : String(e)) }
   }
 
   const createIssue = async () => {
-    if (!form.title) return
+    if (!form.title || !locationId) return
     setCreating(true)
+    setError(null)
     try {
       await api.createMaintenanceIssue({
-        location_id: LOCATION_ID,
+        location_id: locationId,
         room_id: form.room_id ? parseInt(form.room_id) : null,
         issue_type: form.issue_type,
         title: form.title,
@@ -56,7 +63,7 @@ export default function MaintenancePage() {
       setShowCreate(false)
       setForm({ room_id: '', issue_type: 'plumbing', title: '', severity: 'normal', description: '' })
       load()
-    } catch (e: any) { setError(e.message) }
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : String(e)) }
     finally { setCreating(false) }
   }
 
@@ -88,7 +95,7 @@ export default function MaintenancePage() {
             <div className="modal-title">Report Maintenance Issue</div>
             <div className="form-group">
               <label className="form-label">Title *</label>
-              <input className="form-input" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g. Leaking faucet in Room 3" />
+              <input className="form-input" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g. Leaking faucet in Room 103" />
             </div>
             <div className="form-group">
               <label className="form-label">Issue Type</label>
@@ -132,7 +139,7 @@ export default function MaintenancePage() {
               {issues.map((i) => (
                 <tr key={i.id}>
                   <td className="text-muted text-sm">#{i.id}</td>
-                  <td>{i.room_number ?? (i.room_id ? `#${i.room_id}` : '—')}</td>
+                  <td>{(i as unknown as { room_number?: string }).room_number ?? (i.room_id ? `#${i.room_id}` : '—')}</td>
                   <td className="text-sm">{i.issue_type}</td>
                   <td>{i.title}</td>
                   <td><Badge value={i.severity} /></td>
