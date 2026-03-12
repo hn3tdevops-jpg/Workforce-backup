@@ -1,16 +1,25 @@
 "use client"
-
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
-const NAV_LINKS: { label: string; href: string }[] = [
-  { label: 'Dashboard', href: '/' },
-  { label: 'Schedule', href: '/schedule' },
-  { label: 'Employees', href: '/employees' },
-  { label: 'Jobs', href: '/jobs' },
-  { label: 'Reports', href: '/reports' },
-  { label: 'Integrations', href: '/integrations' },
-  { label: 'Settings', href: '/settings' },
-  { label: 'Help', href: '/help' },
+const NAV_SECTIONS = [
+  {
+    label: 'Operations',
+    links: [
+      { label: 'Dashboard', href: '/', icon: '📊' },
+      { label: 'Room Board', href: '/rooms', icon: '🏨' },
+      { label: 'Housekeeping', href: '/housekeeping', icon: '🧹' },
+      { label: 'Maintenance', href: '/maintenance', icon: '🔧' },
+      { label: 'Inventory', href: '/inventory', icon: '📦' },
+    ],
+  },
+  {
+    label: 'Configuration',
+    links: [
+      { label: 'Property Setup', href: '/property-setup', icon: '🏗️' },
+      { label: 'Settings', href: '/settings', icon: '⚙️' },
+    ],
+  },
 ]
 
 export interface SidebarProps {
@@ -19,9 +28,10 @@ export interface SidebarProps {
 }
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
+  const pathname = usePathname()
+
   return (
     <>
-      {/* Mobile overlay */}
       {isOpen && (
         <div
           role="button"
@@ -32,14 +42,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           onKeyDown={(e) => e.key === 'Escape' && onClose()}
         />
       )}
-
       <nav
         id="main-sidebar"
         aria-label="Main navigation"
         className={`sidebar${isOpen ? ' sidebar--open' : ''}`}
       >
         <div className="sidebar-header">
-          <span className="sidebar-brand">Hospitable Ops</span>
+          <span className="sidebar-brand">🏖️ Hospitable Ops</span>
           <button
             aria-label="Close navigation"
             className="sidebar-close"
@@ -49,29 +58,41 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           </button>
         </div>
 
-        {/* Business selector placeholder */}
         <div className="sidebar-business">
           <label htmlFor="sidebar-business-select" className="sidebar-business-label">
-            Business
+            Property
           </label>
           <select
             id="sidebar-business-select"
             className="sidebar-business-select"
-            defaultValue="Demo Business"
+            defaultValue="Silver Sands Motel"
           >
-            <option>Demo Business</option>
+            <option>Silver Sands Motel</option>
           </select>
         </div>
 
-        <ul className="sidebar-nav" role="list">
-          {NAV_LINKS.map(({ label, href }) => (
-            <li key={href}>
-              <Link href={href} className="sidebar-nav-link">
-                {label}
-              </Link>
-            </li>
-          ))}
-        </ul>
+        {NAV_SECTIONS.map((section) => (
+          <div key={section.label}>
+            <div className="sidebar-section-label">{section.label}</div>
+            <ul className="sidebar-nav" role="list">
+              {section.links.map(({ label, href, icon }) => {
+                const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href)
+                return (
+                  <li key={href}>
+                    <Link
+                      href={href}
+                      className={`sidebar-nav-link${isActive ? ' active' : ''}`}
+                      onClick={onClose}
+                    >
+                      <span>{icon}</span>
+                      {label}
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        ))}
       </nav>
     </>
   )

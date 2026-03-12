@@ -1,6 +1,9 @@
 from fastapi import FastAPI
-
+from apps.api.app.db.base import import_models
 from apps.api.app.api.router import api_router
+
+# Register all models so SQLAlchemy metadata is fully populated
+import_models()
 
 app = FastAPI(title="Workforce API", version="0.1.0")
 
