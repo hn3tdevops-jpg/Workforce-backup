@@ -6,6 +6,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.middleware.cors import CORSMiddleware
 
 from apps.api.app.api.routes import audit, business, demo, employee, health, scheduling, training
 from apps.api.app.api.v1.router import v1_router
@@ -35,6 +36,22 @@ app = FastAPI(title="Cloud Workforce System", version="0.2.0", lifespan=lifespan
 
 if os.getenv("ENABLE_AUDIT", "0") == "1":
     app.add_middleware(AuditMiddleware)
+
+# Enable CORS for local dev and known frontend origins. Adjust origins as needed.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5000",
+        "http://127.0.0.1:5000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://workforce-hn3t.pythonanywhere.com",
+        "https://api-workforce-hn3t.pythonanywhere.com",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 _templates_dir = os.path.join(os.path.dirname(__file__), "templates")
 templates = Jinja2Templates(directory=_templates_dir)
