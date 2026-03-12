@@ -1,0 +1,52 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>HN3T App</title>
+  <meta name="description" content="HN3T Workforce / Hospitable Ops" />
+  <link rel="icon" href="/favicon.ico" />
+  <!-- HN3T-UI:styles -->
+  <style>
+    :root { --bg:#0f1724; --fg:#e6eef8; --accent:#4f46e5; }
+    body { background:var(--bg); color:var(--fg); font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; margin:0; }
+    .container{max-width:1000px;margin:32px auto;padding:24px}
+    header{display:flex;align-items:center;gap:16px}
+    h1{margin:0;font-size:1.4rem}
+    nav a{color:var(--fg);opacity:.85;margin-right:12px;text-decoration:none}
+  </style>
+  <!-- /HN3T-UI:styles -->
+</head>
+<body>
+  <div class="container">
+    <header>
+      <img src="/logo.png" alt="HN3T" height="48"/>
+      <h1>HN3T Workforce</h1>
+      <nav>
+        <a href="/workforce">Workforce</a>
+        <a href="/housekeeping">Housekeeping</a>
+        <a href="/inspections">Inspections</a>
+        <a href="/admin">Admin</a>
+      </nav>
+    </header>
+    <main>
+      <section id="app-root">
+        <!-- App content will be mounted here -->
+      </section>
+    </main>
+    <footer style="margin-top:40px;opacity:.6">&copy; HN3T</footer>
+  </div>
+  <!-- HN3T-UI:scripts -->
+  <script>
+    // Minimal hydration placeholder
+    (function(){
+      var root = document.getElementById('app-root');
+      if(root && root.children.length===0){
+        root.innerHTML = '<p>Welcome to HN3T — UI placeholder.</p>';
+      }
+    })();
+  </script>
+  <!-- /HN3T-UI:scripts -->
+</body>
+</html>
