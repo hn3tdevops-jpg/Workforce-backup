@@ -3,7 +3,8 @@ nixPkgs = ["nodejs_22", "python3", "gcc", "gnumake"]
 
 [phases.install]
 cmds = [
-  "npm install -g pnpm",
+  "corepack enable",
+  "corepack prepare pnpm@latest --activate",
   "pnpm install --frozen-lockfile"
 ]
 
