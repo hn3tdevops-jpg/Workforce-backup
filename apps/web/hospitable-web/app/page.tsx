@@ -56,9 +56,9 @@ export default function DashboardPage() {
           <StatCard label="Inspect" value={summary.inspect_rooms} />
           <StatCard label="Inspected" value={summary.inspected_rooms} variant="ok" />
           <StatCard label="Blocked" value={summary.blocked_rooms} variant={summary.blocked_rooms > 0 ? 'danger' : undefined} />
-          <StatCard label="Occupied" value={summary.occupied_rooms} />
+          <StatCard label="Maintenance" value={summary.maintenance_flagged_rooms} variant={summary.maintenance_flagged_rooms > 0 ? 'warn' : undefined} />
           <StatCard label="Open Tasks" value={summary.open_tasks} variant={summary.open_tasks > 0 ? 'warn' : 'ok'} />
-          <StatCard label="Open Issues" value={summary.open_issues} variant={summary.open_issues > 0 ? 'warn' : 'ok'} />
+          <StatCard label="Open Issues" value={summary.open_maintenance_issues} variant={summary.open_maintenance_issues > 0 ? 'warn' : 'ok'} />
         </div>
       )}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>

@@ -10,6 +10,7 @@ const NAV_SECTIONS = [
       { label: 'Room Board', href: '/rooms', icon: '🏨' },
       { label: 'Housekeeping', href: '/housekeeping', icon: '🧹' },
       { label: 'Maintenance', href: '/maintenance', icon: '🔧' },
+      { label: 'Inspections', href: '/inspections', icon: '✅' },
       { label: 'Inventory', href: '/inventory', icon: '📦' },
     ],
   },

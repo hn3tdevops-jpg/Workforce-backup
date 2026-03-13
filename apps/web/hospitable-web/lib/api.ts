@@ -102,17 +102,9 @@ export interface DashboardSummary {
   inspect_rooms: number
   inspected_rooms: number
   blocked_rooms: number
-  occupied_rooms: number
-  vacant_rooms: number
-  checkout_rooms: number
+  maintenance_flagged_rooms: number
   open_tasks: number
-  in_progress_tasks: number
-  completed_tasks: number
-  total_tasks: number
-  open_issues: number
-  in_progress_issues: number
-  resolved_issues: number
-  total_issues: number
+  open_maintenance_issues: number
 }
 
 export interface TaskRead {

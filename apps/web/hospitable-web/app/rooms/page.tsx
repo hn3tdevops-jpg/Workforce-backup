@@ -1,6 +1,7 @@
 "use client"
 import { useEffect, useState, useCallback } from 'react'
 import { api, getLocationId, HousekeepingStatus, OccupancyStatus } from '../../lib/api'
+import Link from 'next/link'
 
 const HK_STATUSES: HousekeepingStatus[] = ['dirty','assigned','cleaning','clean','inspect','inspected','blocked']
 const OCC_STATUSES: OccupancyStatus[] = ['vacant','occupied','checkout','stayover','ooo']
@@ -126,12 +127,18 @@ export default function RoomsPage() {
             <div
               key={room.id}
               className={`room-card hk-${room.housekeeping_status}${selected.has(room.id) ? ' selected' : ''}`}
-              onClick={() => toggleSelect(room.id)}
+              onClick={(e) => {
+                if ((e.target as HTMLElement).closest('.room-card-link')) return
+                toggleSelect(room.id)
+              }}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && toggleSelect(room.id)}
             >
-              <div className="room-card-number">Room {room.room_number}</div>
+              <div className="flex justify-between items-start">
+                <div className="room-card-number">Room {room.room_number}</div>
+                <Link href={`/rooms/${room.id}`} className="room-card-link text-xs text-blue-600 hover:underline">Details →</Link>
+              </div>
               <div className="room-card-label">{room.room_type ?? ''}</div>
               <div className="room-card-badges">
                 <Badge value={room.housekeeping_status} />
