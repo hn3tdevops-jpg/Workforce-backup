@@ -1,24 +1,5 @@
 services:
   - type: web
-    name: workforce-api
-    env: python
-    region: oregon
-    plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: bash startup.sh
-    envVars:
-      - key: DATABASE_URL
-        value: sqlite+aiosqlite:////opt/render/project/src/workforce.db
-      - key: APP_ENV
-        value: production
-      - key: SECRET_KEY
-        generateValue: true
-    disk:
-      name: workforce-db
-      mountPath: /opt/render/project/src
-      sizeGB: 1
-
-  - type: web
     name: hospitable-web
     env: node
     region: oregon
@@ -28,9 +9,5 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 20
-      - key: DB_PATH
-        value: /opt/render/project/src/workforce-web.db
-    disk:
-      name: workforce-web-db
-      mountPath: /opt/render/project/src
-      sizeGB: 1
+      - key: NEXT_PUBLIC_API_BASE_URL
+        value: https://api-hn3t.pythonanywhere.com

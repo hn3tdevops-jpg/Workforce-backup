@@ -4,7 +4,7 @@
  * The Next.js app proxies to the FastAPI backend in production.
  */
 
-const BASE = ''
+const BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api-hn3t.pythonanywhere.com'
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
