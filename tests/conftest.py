@@ -10,7 +10,7 @@ from apps.api.app.main import app
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
 
-@pytest_asyncio.fixture(scope="function")
+@pytest_asyncio.fixture(scope="module")
 async def db_engine():
     import_models()
     engine = create_async_engine(TEST_DATABASE_URL, future=True)
