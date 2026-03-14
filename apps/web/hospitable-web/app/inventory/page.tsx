@@ -1,33 +1,57 @@
 "use client"
 import { useEffect, useState } from 'react'
-import { api, RoomListItem, RoomAsset, SupplyPar } from '../../lib/api'
+import { api, getLocationId } from '../../lib/api'
 
-const LOCATION_ID = process.env.NEXT_PUBLIC_LOCATION_ID ?? 'silver-sands-main'
+interface RoomRow {
+  id: number
+  room_number: string
+  room_type?: string | null
+}
+
+interface AssetRow {
+  id: number
+  asset_type: string
+  asset_name: string
+  condition: string
+}
+
+interface ParRow {
+  id: number
+  item_name: string
+  par_quantity: number
+  unit: string
+  category: string
+}
 
 export default function InventoryPage() {
-  const [rooms, setRooms] = useState<RoomListItem[]>([])
-  const [selectedRoom, setSelectedRoom] = useState<RoomListItem | null>(null)
-  const [assets, setAssets] = useState<RoomAsset[]>([])
-  const [pars, setPars] = useState<SupplyPar[]>([])
+  const [rooms, setRooms] = useState<RoomRow[]>([])
+  const [selectedRoom, setSelectedRoom] = useState<RoomRow | null>(null)
+  const [assets, setAssets] = useState<AssetRow[]>([])
+  const [pars, setPars] = useState<ParRow[]>([])
   const [loading, setLoading] = useState(true)
   const [detailLoading, setDetailLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    api.listRooms(LOCATION_ID)
-      .then(setRooms)
+    getLocationId()
+      .then((locationId) => api.listRooms(locationId))
+      .then((data) => setRooms(data as unknown as RoomRow[]))
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
   }, [])
 
-  const selectRoom = async (room: RoomListItem) => {
+  const selectRoom = async (room: RoomRow) => {
     setSelectedRoom(room)
     setDetailLoading(true)
+    setError(null)
     try {
-      const [a, p] = await Promise.all([api.listRoomAssets(room.id), api.listSupplyPars(room.id)])
-      setAssets(a)
-      setPars(p)
-    } catch (e: any) { setError(e.message) }
+      const [a, p] = await Promise.all([
+        api.listRoomAssets(room.id),
+        api.listSupplyPars(room.id),
+      ])
+      setAssets(a as unknown as AssetRow[])
+      setPars(p as unknown as ParRow[])
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : String(e)) }
     finally { setDetailLoading(false) }
   }
 
@@ -50,7 +74,7 @@ export default function InventoryPage() {
                 color: selectedRoom?.id === r.id ? '#fff' : 'inherit',
               }}
             >
-              Room {r.room_number} {r.room_label ? `— ${r.room_label}` : ''}
+              Room {r.room_number}{r.room_type ? ` — ${r.room_type}` : ''}
             </div>
           ))}
         </div>
@@ -65,15 +89,13 @@ export default function InventoryPage() {
                 <h2 className="font-bold mb-4">Assets — Room {selectedRoom.room_number}</h2>
                 {assets.length === 0 ? <div className="text-muted text-sm">No assets recorded</div> : (
                   <table className="data-table">
-                    <thead><tr><th>Type</th><th>Name</th><th>Expected</th><th>Present</th><th>Condition</th></tr></thead>
+                    <thead><tr><th>Type</th><th>Name</th><th>Condition</th></tr></thead>
                     <tbody>
                       {assets.map((a) => (
                         <tr key={a.id}>
                           <td className="text-sm">{a.asset_type}</td>
                           <td>{a.asset_name}</td>
-                          <td>{a.quantity_expected}</td>
-                          <td style={{ color: a.quantity_present < a.quantity_expected ? '#dc2626' : 'inherit' }}>{a.quantity_present}</td>
-                          <td className="text-sm">{a.condition_status ?? '—'}</td>
+                          <td className="text-sm">{a.condition ?? '—'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -84,14 +106,13 @@ export default function InventoryPage() {
                 <h2 className="font-bold mb-4">Supply Pars — Room {selectedRoom.room_number}</h2>
                 {pars.length === 0 ? <div className="text-muted text-sm">No supply pars configured</div> : (
                   <table className="data-table">
-                    <thead><tr><th>Item</th><th>Code</th><th>Expected</th><th>Min</th><th>Unit</th></tr></thead>
+                    <thead><tr><th>Item</th><th>Category</th><th>Par Qty</th><th>Unit</th></tr></thead>
                     <tbody>
                       {pars.map((p) => (
                         <tr key={p.id}>
                           <td>{p.item_name}</td>
-                          <td className="text-sm text-muted">{p.item_code}</td>
-                          <td>{p.expected_qty}</td>
-                          <td>{p.min_qty}</td>
+                          <td className="text-sm text-muted">{p.category}</td>
+                          <td>{p.par_quantity}</td>
                           <td className="text-sm">{p.unit}</td>
                         </tr>
                       ))}

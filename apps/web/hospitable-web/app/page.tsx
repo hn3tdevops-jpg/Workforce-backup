@@ -1,9 +1,7 @@
 "use client"
 import { useEffect, useState } from 'react'
-import { api, DashboardSummary, TaskRead, MaintenanceIssueRead } from '../lib/api'
+import { api, getLocationId, DashboardSummary, TaskRead, MaintenanceIssueRead } from '../lib/api'
 import Link from 'next/link'
-
-const LOCATION_ID = process.env.NEXT_PUBLIC_LOCATION_ID ?? 'silver-sands-main'
 
 function StatCard({ label, value, variant }: { label: string; value: number; variant?: 'warn' | 'danger' | 'ok' }) {
   return (
@@ -26,11 +24,14 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    Promise.all([
-      api.getDashboardSummary(LOCATION_ID),
-      api.getHousekeepingBoard(LOCATION_ID),
-      api.getMaintenanceBoard(LOCATION_ID),
-    ])
+    getLocationId()
+      .then((locationId) =>
+        Promise.all([
+          api.getDashboardSummary(locationId),
+          api.getHousekeepingBoard(locationId),
+          api.getMaintenanceBoard(locationId),
+        ])
+      )
       .then(([s, t, i]) => { setSummary(s); setTasks(t.slice(0, 5)); setIssues(i.slice(0, 5)) })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
@@ -43,7 +44,7 @@ export default function DashboardPage() {
     <div>
       <div className="page-header">
         <h1 className="page-title">Hospitable Dashboard</h1>
-        <p className="page-subtitle">Silver Sands Motel — operational overview</p>
+        <p className="page-subtitle">Silver Sands Resort — operational overview</p>
       </div>
       {summary && (
         <div className="stat-grid">
@@ -55,7 +56,7 @@ export default function DashboardPage() {
           <StatCard label="Inspect" value={summary.inspect_rooms} />
           <StatCard label="Inspected" value={summary.inspected_rooms} variant="ok" />
           <StatCard label="Blocked" value={summary.blocked_rooms} variant={summary.blocked_rooms > 0 ? 'danger' : undefined} />
-          <StatCard label="Maint. Flagged" value={summary.maintenance_flagged_rooms} variant={summary.maintenance_flagged_rooms > 0 ? 'warn' : 'ok'} />
+          <StatCard label="Maintenance" value={summary.maintenance_flagged_rooms} variant={summary.maintenance_flagged_rooms > 0 ? 'warn' : undefined} />
           <StatCard label="Open Tasks" value={summary.open_tasks} variant={summary.open_tasks > 0 ? 'warn' : 'ok'} />
           <StatCard label="Open Issues" value={summary.open_maintenance_issues} variant={summary.open_maintenance_issues > 0 ? 'warn' : 'ok'} />
         </div>

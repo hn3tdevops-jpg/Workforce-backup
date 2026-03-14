@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: hospitable-web
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: cd apps/web/hospitable-web && pnpm install && pnpm build
+    startCommand: cd apps/web/hospitable-web && pnpm start
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: NEXT_PUBLIC_API_BASE_URL
+        value: https://api-hn3t.pythonanywhere.com

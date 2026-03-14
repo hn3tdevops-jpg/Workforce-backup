@@ -1,7 +1,6 @@
 from fastapi import FastAPI
-from apps.api.app.db.base import import_models
-
 from fastapi.middleware.cors import CORSMiddleware
+from apps.api.app.db.base import import_models
 from apps.api.app.api.router import api_router
 
 # Register all models so SQLAlchemy metadata is fully populated
@@ -17,8 +16,10 @@ app.add_middleware(
         "http://localhost:5000",
         "http://127.0.0.1:5173",
         "http://localhost:5173",
+        "http://localhost:3000",
+        "*",
     ],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
