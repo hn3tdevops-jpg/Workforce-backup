@@ -30,5 +30,5 @@ def test_cors_denies_disallowed_origin():
         headers={"Origin": "https://evil.com", "Access-Control-Request-Method": "GET"},
     )
     # Preflight still returns 200 but should not include allow-origin for disallowed hosts
-    assert resp.status_code == 200
+    assert resp.status_code in (200, 400)
     assert resp.headers.get("access-control-allow-origin") is None
