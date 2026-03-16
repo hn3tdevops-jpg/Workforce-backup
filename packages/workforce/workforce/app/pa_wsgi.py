@@ -1,7 +1,7 @@
 # Minimal WSGI app for PythonAnywhere: serves the static index.html for the workforce UI.
 # Usage on PythonAnywhere:
 # - Create a web app (manual via dashboard)
-# - Set "Source code" to /home/hn3t/projects_active/packages/workforce/workforce/app
+# - Set "Source code" to /home/hn3t/projects_active/packages/workforce/app
 # - Point WSGI configuration to this file (pa_wsgi.app)
 # - Install requirements: pip install Flask (or include in virtualenv)
 

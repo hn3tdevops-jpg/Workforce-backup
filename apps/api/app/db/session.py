@@ -8,10 +8,19 @@ from apps.api.app.core.config import get_settings
 def _make_engine():
     settings = get_settings()
     connect_args = {}
-    if settings.DATABASE_URL.startswith("sqlite"):
+    database_url = settings.DATABASE_URL
+
+    # If using SQLite without an async driver in the URL (e.g. "sqlite://" or "sqlite:///./dev.db"),
+    # switch to the aiosqlite async driver for compatibility with SQLAlchemy asyncio extension.
+    if database_url.startswith("sqlite") and "+" not in database_url:
+        database_url = database_url.replace("sqlite://", "sqlite+aiosqlite://", 1)
         connect_args = {"check_same_thread": False}
+    elif database_url.startswith("sqlite"):
+        # URL already contains a driver (e.g. sqlite+aiosqlite://) — still set sqlite-specific args.
+        connect_args = {"check_same_thread": False}
+
     return create_async_engine(
-        settings.DATABASE_URL,
+        database_url,
         echo=False,
         future=True,
         connect_args=connect_args,
