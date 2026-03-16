@@ -42,8 +42,8 @@ def upgrade():
         sa.Column('business_id', sa.String(), sa.ForeignKey('businesses.id', ondelete='CASCADE'), nullable=False),
         sa.Column('primary_location_id', sa.String(), sa.ForeignKey('locations.id', ondelete='SET NULL'), nullable=True),
         sa.Column('status', sa.String(), nullable=False, server_default='active'),
+        sa.UniqueConstraint('user_id', 'business_id', name='uq_membership_user_business'),
     )
-    op.create_unique_constraint('uq_membership_user_business', 'memberships', ['user_id', 'business_id'])
     op.create_index('ix_membership_business_status', 'memberships', ['business_id', 'status'])
 
 

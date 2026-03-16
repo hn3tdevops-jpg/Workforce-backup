@@ -25,3 +25,20 @@ def test_unit_and_task_lifecycle():
     t_completed = transition_task(t.id, TaskStatus.COMPLETED)
     assert t_completed is not None
     assert t_completed.status.name == 'COMPLETED'
+
+    # verify TaskStatusEvent and AuditEvent were recorded
+    events = get_task_events(t.id)
+    assert len(events) >= 3
+    assert events[-1].new_status == TaskStatus.COMPLETED.value
+
+    # ensure an AuditEvent exists for the transition
+    from apps.api.app.db.session import SessionLocal
+    from apps.api.app.models.housekeeping_models import AuditEvent
+
+    db = SessionLocal()
+    try:
+        audits = db.query(AuditEvent).filter_by(entity_type='task', entity_id=t.id).all()
+        assert len(audits) >= 1
+        assert audits[-1].action == 'status_transition'
+    finally:
+        db.close()
