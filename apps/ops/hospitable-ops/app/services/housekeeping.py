@@ -1,6 +1,6 @@
 import uuid
 from apps.api.app.db.session import SessionLocal
-from apps.api.app.models.housekeeping_models import Unit, Task, UnitStatus, TaskStatus, TaskStatusEvent, AuditEvent
+from apps.api.app.models.housekeeping_models import Unit, Task, UnitStatus, TaskStatus, TaskStatusEvent, AuditEvent, ChecklistTemplate, ChecklistTemplateItem, ChecklistRun, ChecklistRunItem, ChecklistRunStatus
 import datetime
 import json
 
@@ -86,3 +86,84 @@ def get_task_events(task_id: str):
         return db.query(TaskStatusEvent).filter_by(task_id=task_id).order_by(TaskStatusEvent.timestamp).all()
     finally:
         db.close()
+
+
+def create_checklist_template(location_id: str, title: str, items: list, created_by: str = None):
+    """Create a checklist template with items. items is a list of dicts with keys: label, required (optional), item_order (optional)"""
+    db = SessionLocal()
+    try:
+        tid = str(uuid.uuid4())
+        tpl = ChecklistTemplate(id=tid, location_id=location_id, title=title, created_by=created_by)
+        db.add(tpl)
+        for it in items:
+            iid = str(uuid.uuid4())
+            item = ChecklistTemplateItem(
+                id=iid,
+                template_id=tid,
+                label=it.get('label'),
+                required=it.get('required', True),
+                item_order=it.get('item_order')
+            )
+            db.add(item)
+        db.commit()
+        db.refresh(tpl)
+        return tpl
+    finally:
+        db.close()
+
+
+def get_checklist_template(template_id: str):
+    db = SessionLocal()
+    try:
+        tpl = db.get(ChecklistTemplate, template_id)
+        if not tpl:
+            return None
+        items = db.query(ChecklistTemplateItem).filter_by(template_id=template_id).order_by(ChecklistTemplateItem.created_at).all()
+        return {
+            'template': tpl,
+            'items': items,
+        }
+    finally:
+        db.close()
+
+
+def create_checklist_run_from_template(template_id: str, started_by: str = None):
+    db = SessionLocal()
+    try:
+        tpl = db.get(ChecklistTemplate, template_id)
+        if not tpl:
+            return None
+        run_id = str(uuid.uuid4())
+        run = ChecklistRun(id=run_id, template_id=template_id, location_id=tpl.location_id, started_by=started_by)
+        db.add(run)
+        db.flush()
+        items = db.query(ChecklistTemplateItem).filter_by(template_id=template_id).order_by(ChecklistTemplateItem.created_at).all()
+        for it in items:
+            ri = ChecklistRunItem(
+                id=str(uuid.uuid4()),
+                run_id=run_id,
+                template_item_id=it.id,
+                label=it.label
+            )
+            db.add(ri)
+        db.commit()
+        db.refresh(run)
+        return run
+    finally:
+        db.close()
+
+
+def get_checklist_run(run_id: str):
+    db = SessionLocal()
+    try:
+        run = db.get(ChecklistRun, run_id)
+        if not run:
+            return None
+        items = db.query(ChecklistRunItem).filter_by(run_id=run_id).order_by(ChecklistRunItem.created_at).all()
+        return {
+            'run': run,
+            'items': items,
+        }
+    finally:
+        db.close()
+

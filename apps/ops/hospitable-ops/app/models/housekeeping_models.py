@@ -101,3 +101,52 @@ class AuditEvent(Base):
     action = Column(String, nullable=False)
     payload_json = Column(Text, nullable=True)
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+
+
+class ChecklistTemplate(Base):
+    __tablename__ = 'checklist_templates'
+    id = Column(String, primary_key=True)
+    location_id = Column(String, nullable=False)
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    created_by = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+
+class ChecklistTemplateItem(Base):
+    __tablename__ = 'checklist_template_items'
+    id = Column(String, primary_key=True)
+    template_id = Column(String, ForeignKey('checklist_templates.id'), nullable=False)
+    label = Column(String, nullable=False)
+    required = Column(Boolean, default=True)
+    item_order = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+
+class ChecklistRunStatus(enum.Enum):
+    PENDING = 'PENDING'
+    IN_PROGRESS = 'IN_PROGRESS'
+    COMPLETED = 'COMPLETED'
+    CANCELED = 'CANCELED'
+
+
+class ChecklistRun(Base):
+    __tablename__ = 'checklist_runs'
+    id = Column(String, primary_key=True)
+    template_id = Column(String, ForeignKey('checklist_templates.id'), nullable=False)
+    location_id = Column(String, nullable=False)
+    started_by = Column(String, nullable=True)
+    status = Column(Enum(ChecklistRunStatus), default=ChecklistRunStatus.PENDING)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+
+class ChecklistRunItem(Base):
+    __tablename__ = 'checklist_run_items'
+    id = Column(String, primary_key=True)
+    run_id = Column(String, ForeignKey('checklist_runs.id'), nullable=False)
+    template_item_id = Column(String, ForeignKey('checklist_template_items.id'), nullable=True)
+    label = Column(String, nullable=False)
+    result = Column(String, nullable=True)
+    completed_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+

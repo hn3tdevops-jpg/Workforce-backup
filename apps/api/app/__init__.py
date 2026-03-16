@@ -5,6 +5,13 @@ from pkgutil import extend_path
 __path__ = extend_path(__path__, __name__)
 
 _repo_root = os.path.dirname(os.path.dirname(__file__))
+
+# Prefer hospitable-ops app for local overrides
 _extra = os.path.join(_repo_root, 'hospitable-ops', 'app')
 if os.path.isdir(_extra) and _extra not in __path__:
     __path__.insert(0, _extra)
+
+# Also make the packages/workforce app available under the apps.api.app namespace
+_workforce_app = os.path.join(_repo_root, 'packages', 'workforce', 'workforce', 'app')
+if os.path.isdir(_workforce_app) and _workforce_app not in __path__:
+    __path__.insert(0, _workforce_app)

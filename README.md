@@ -23,6 +23,17 @@ poetry run alembic upgrade head
 
 # 4. Start the development server
 poetry run uvicorn app.main:app --reload
+
+Development (alternative):
+Run the provided development script for live reload and a consistent entrypoint:
+
+    ./scripts/run_uvicorn.sh
+
+Or run directly (explicit path to app):
+
+    uvicorn apps.api.app.main:app --reload --host 0.0.0.0 --port 8000
+
+
 ```
 
 The API will be available at `http://localhost:8000/api/v1`.

@@ -23,7 +23,7 @@ Quick CLI references
 - `python -m app.cli.main purge` — maintenance: purge expired messages and stale refresh tokens
 
 High-level architecture
-- Stack: FastAPI (ASGI) + SQLAlchemy 2 (ORM) + Alembic + Pydantic v2 + Jinja2; deployed using a2wsgi for PythonAnywhere WSGI setups.
+- Stack: FastAPI (ASGI) + SQLAlchemy 2 (ORM) + Alembic + Pydantic v2 + Jinja2; deployed using asgi2wsgi for PythonAnywhere WSGI setups.
 - Layering and locations:
   - app/models/ — SQLAlchemy ORM model classes (source of truth for schema)
   - app/schemas/ — Pydantic request/response models (separate from ORM models)

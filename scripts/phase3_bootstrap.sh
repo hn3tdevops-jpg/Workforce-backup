@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd ~/projects_active
+cd "$(cd "$(dirname "$0")/.." && pwd)"
 
 echo "==> Ensuring target directories exist"
 mkdir -p apps/api/app/api/v1/endpoints
