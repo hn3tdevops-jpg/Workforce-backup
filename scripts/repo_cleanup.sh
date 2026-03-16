@@ -23,7 +23,7 @@ if [ -d app ] && [ ! -d apps/api/app ]; then
   mv app apps/api/
 fi
 
-if [ -d workforce ] && [ ! -d packages/workforce/workforce ]; then
+if [ -d workforce ] && [ ! -d packages/workforce ]; then
   mkdir -p packages/workforce
   mv workforce packages/workforce/
 fi

@@ -215,13 +215,13 @@ Replace `<your-username>` with your PythonAnywhere username.
 ### Step 4 — WSGI configuration file
 
 PythonAnywhere's free/hacker tier uses **WSGI (not ASGI)**. FastAPI is an ASGI app, so
-we use `a2wsgi` as a thin adapter.
+we use `asgi2wsgi` as a thin adapter.
 
 **Install the adapter:**
 
 ```bash
 source ~/scheduler/workforce/venv/bin/activate
-pip install a2wsgi
+pip install asgi2wsgi
 ```
 
 **Edit the WSGI file** (PythonAnywhere auto-creates it at
@@ -242,10 +242,10 @@ from dotenv import load_dotenv
 load_dotenv(os.path.join(project_home, '.env'))
 
 # Wrap FastAPI (ASGI) in a WSGI adapter
-from a2wsgi import ASGIMiddleware
+from asgi2wsgi import AsgiToWsgi
 from app.main import app as fastapi_app
 
-application = ASGIMiddleware(fastapi_app)
+application = AsgiToWsgi(fastapi_app)
 ```
 
 > **Note:** Replace `<your-username>` with your actual PythonAnywhere username.

@@ -25,7 +25,7 @@ Marketplace swap flow
 
 CLI seed commands
 
-PythonAnywhere deployment using a2wsgi
+PythonAnywhere deployment using asgi2wsgi
 
 
 You MUST preserve:
