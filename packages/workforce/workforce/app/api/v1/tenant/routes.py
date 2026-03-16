@@ -795,9 +795,6 @@ def set_member_location_roles(
 
         # Add new ones
         loc_labels = payload.job_title_labels.get(location_id, {})
-        for role in location_scoped_roles + [r for r in (db.execute(select(BizRole).where(BizRole.id == rid, BizRole.business_id == business_id)).scalars().all()) if False]:
-            # location_scoped_roles already populated; non-location roles handled below
-            pass
         # Add all roles (we already validated and collected location_scoped_roles)
         for role_id in role_ids:
             role = db.execute(
