@@ -4,7 +4,7 @@ from datetime import datetime
 from sqlalchemy import JSON, ForeignKey, String, func, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from apps.api.app.db.base import Base
+from apps.api.app.models.base import Base
 
 
 class Business(Base):

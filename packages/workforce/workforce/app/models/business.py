@@ -1,7 +1,7 @@
 from sqlalchemy import DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from apps.api.app.models.base import Base, TimestampMixin, UUIDMixin
+from packages.workforce.workforce.app.models.base import Base, TimestampMixin, UUIDMixin
 
 
 class Business(UUIDMixin, TimestampMixin, Base):

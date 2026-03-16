@@ -18,7 +18,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 
-from apps.api.app.models.base import Base, TimestampMixin, UUIDMixin
+from packages.workforce.workforce.app.models.base import Base, TimestampMixin, UUIDMixin
 
 
 def _uuid() -> str:

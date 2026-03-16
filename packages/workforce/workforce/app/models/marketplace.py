@@ -16,7 +16,7 @@ from sqlalchemy import (
     Integer, String, Text, Time,
 )
 from sqlalchemy.orm import relationship
-from apps.api.app.models.base import Base
+from packages.workforce.workforce.app.models.base import Base
 
 
 def _uuid() -> str:

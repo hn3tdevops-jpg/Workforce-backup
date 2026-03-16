@@ -3,7 +3,7 @@ import enum
 from sqlalchemy import DateTime, Enum, Float, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
-from apps.api.app.models.base import Base, TimestampMixin, UUIDMixin
+from packages.workforce.workforce.app.models.base import Base, TimestampMixin, UUIDMixin
 
 
 class TrainingStatus(str, enum.Enum):

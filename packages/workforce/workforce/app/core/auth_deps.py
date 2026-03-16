@@ -21,7 +21,7 @@ from sqlalchemy.orm import Session
 
 from apps.api.app.core.db import get_db
 from apps.api.app.core.security import decode_access_token, hash_api_key
-from apps.api.app.models.identity import (
+from packages.workforce.workforce.app.models.identity import (
     Agent, AgentCredential, AgentStatus,
     BizRole, BizRolePermission, Membership, MembershipLocationRole, MembershipRole,
     MembershipStatus, Permission, User, UserStatus,

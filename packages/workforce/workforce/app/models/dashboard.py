@@ -6,7 +6,7 @@ import enum
 from sqlalchemy import Boolean, ForeignKey, Index, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
-from apps.api.app.models.base import Base, TimestampMixin, UUIDMixin
+from packages.workforce.workforce.app.models.base import Base, TimestampMixin, UUIDMixin
 
 
 class WidgetType(str, enum.Enum):

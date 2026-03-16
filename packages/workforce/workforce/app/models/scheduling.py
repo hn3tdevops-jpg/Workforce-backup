@@ -18,7 +18,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from apps.api.app.models.base import Base, TimestampMixin, UUIDMixin
+from packages.workforce.workforce.app.models.base import Base, TimestampMixin, UUIDMixin
 
 
 class AvailabilityStatus(str, enum.Enum):

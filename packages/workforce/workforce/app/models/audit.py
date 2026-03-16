@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from sqlalchemy import DateTime, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
-from apps.api.app.models.base import Base, UUIDMixin
+from packages.workforce.workforce.app.models.base import Base, UUIDMixin
 
 
 class AuditLog(UUIDMixin, Base):

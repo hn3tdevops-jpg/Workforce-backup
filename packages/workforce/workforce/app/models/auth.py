@@ -7,11 +7,11 @@ this module adds an auth-scoped Role alias and the user↔role association table
 """
 from sqlalchemy import Column, ForeignKey, String, Table
 
-from apps.api.app.models.base import Base, UUIDMixin
-from apps.api.app.models.identity import RefreshToken  # noqa: F401 — re-export
+from packages.workforce.workforce.app.models.base import Base, UUIDMixin
+from packages.workforce.workforce.app.models.identity import RefreshToken  # noqa: F401 — re-export
 
-# Re-export the existing scheduling Role for consumers who import from apps.api.app.models.auth
-from apps.api.app.models.employee import Role  # noqa: F401
+# Re-export the existing scheduling Role for consumers who import from packages.workforce.workforce.app.models.auth
+from packages.workforce.workforce.app.models.employee import Role  # noqa: F401
 
 # ── User ↔ Auth-Role association ─────────────────────────────────────────────
 
