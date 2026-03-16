@@ -772,6 +772,22 @@ def set_member_location_roles(
         ).scalars().all()
         removed_role_ids = [r.role_id for r in removed_rows]
 
+        # Last-location-owner guard: if removing a Location Owner assignment would leave the location with no owners, block it
+        if existing_owner_removal_guard:
+            others = db.execute(
+                select(MembershipLocationRole)
+                .join(BizRole, BizRole.id == MembershipLocationRole.role_id)
+                .join(Membership, Membership.id == MembershipLocationRole.membership_id)
+                .where(
+                    MembershipLocationRole.location_id == location_id,
+                    BizRole.name.ilike('location owner'),
+                    MembershipLocationRole.membership_id != membership_id,
+                    Membership.status == MembershipStatus.active,
+                )
+            ).scalars().all()
+            if not others:
+                raise HTTPException(400, "Cannot remove last Location Owner for this location")
+
         db.execute(
             delete(MembershipLocationRole).where(
                 MembershipLocationRole.membership_id == membership_id,
