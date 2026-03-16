@@ -11,7 +11,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from apps.api.app.core.auth_deps import (
-    CurrentUser, require_membership, require_permission,
+    CurrentUser, require_membership, require_permission, _get_user_location_permissions,
 )
 from apps.api.app.core.db import get_db
 from apps.api.app.models.business import Location
@@ -21,6 +21,27 @@ from apps.api.app.models.identity import (
 )
 
 router = APIRouter(prefix="/api/v1/tenant/{business_id}", tags=["tenant"])
+
+
+@router.get('/effective_permissions')
+def get_effective_permissions(business_id: str, location_id: str | None = None, tenant_ctx = Depends('apps.api.app.core.auth_deps.get_tenant_ctx')):
+    """Return effective permissions for current user in the business and optional location."""
+    # tenant_ctx is resolved by get_tenant_ctx and includes permissions and user context
+    # If location_id specified, compute location-specific perms
+    from apps.api.app.core.auth_deps import _get_user_location_permissions
+    if location_id:
+        # need user object; tenant_ctx is TenantContext dataclass
+        # Attempt to load user from DB in a minimal way
+        # For now return location-specific union by calling helper with DB session
+        from apps.api.app.core.db import get_db
+        db = next(get_db())
+        # Need actual User object for helper; load by id
+        from apps.api.app.models.identity import User
+        user = db.get(User, tenant_ctx.user_id)
+        perms = _get_user_location_permissions(user, business_id, location_id, db)
+    else:
+        perms = tenant_ctx.permissions
+    return list(perms)
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -655,11 +676,35 @@ def set_member_location_roles(
     user: CurrentUser = None,
 ):
     """Replace location-role assignments for a member. Only affects locations present in the payload.
-    Requires roles:write permission.
+    Requires roles:write permission. Additionally enforces location-owner delegation: for LOCATION-scoped roles,
+    the caller must either have the 'rbac.location_roles.manage' or 'rbac.location_assignments.manage' permission,
+    or be a Location Owner at the affected location. Writes AuditEvent entries for each change.
     """
+    from datetime import datetime as _dt, timezone as _tz
+    from apps.api.app.models.identity import AuditEvent
+
     m = db.get(Membership, membership_id)
     if not m or m.business_id != business_id:
         raise HTTPException(404, "Membership not found")
+
+    # Helper: check if user is a Location Owner at the given location
+    def _is_location_owner(user_id: str, location_id: str) -> bool:
+        if not user_id:
+            return False
+        q = (
+            select(MembershipLocationRole, BizRole)
+            .join(BizRole, BizRole.id == MembershipLocationRole.role_id)
+            .join(Membership, Membership.id == MembershipLocationRole.membership_id)
+            .where(
+                Membership.user_id == user_id,
+                Membership.business_id == business_id,
+                MembershipLocationRole.location_id == location_id,
+                BizRole.name.ilike('location owner'),
+                Membership.status == MembershipStatus.active,
+            )
+        )
+        rows = db.execute(q).all()
+        return len(rows) > 0
 
     for location_id, role_ids in payload.assignments.items():
 
@@ -669,21 +714,96 @@ def set_member_location_roles(
         ).scalar_one_or_none()
         if not loc:
             raise HTTPException(404, f"Location {location_id} not found in this business")
-        # Delete existing assignments for this location
-        db.execute(
-            delete(MembershipLocationRole).where(
-                MembershipLocationRole.membership_id == membership_id,
-                MembershipLocationRole.location_id == location_id,
-            )
-        )
-        # Add new ones
-        loc_labels = payload.job_title_labels.get(location_id, {})
+
+        # Pre-check delegation: if any role being assigned or present previously is LOCATION scoped, enforce owner delegation
+        # Build list of roles to be created
+        location_scoped_roles = []
         for role_id in role_ids:
             role = db.execute(
                 select(BizRole).where(BizRole.id == role_id, BizRole.business_id == business_id)
             ).scalar_one_or_none()
             if not role:
                 raise HTTPException(404, f"Role {role_id} not found in this business")
+            if role.scope_type == 'LOCATION':
+                location_scoped_roles.append(role)
+
+        # Also check existing assignments that will be deleted and might remove a Location Owner
+        existing_owner_removal_guard = False
+        # Fetch existing assignments for this member at this location
+        existing_rows = db.execute(
+            select(MembershipLocationRole, BizRole)
+            .join(BizRole, BizRole.id == MembershipLocationRole.role_id)
+            .where(
+                MembershipLocationRole.membership_id == membership_id,
+                MembershipLocationRole.location_id == location_id,
+            )
+        ).all()
+        # If any existing role is a Location Owner and it's not present in the new set, we may be removing a Location Owner
+        for mlr, role in existing_rows:
+            if role.scope_type == 'LOCATION' and role.name.lower() == 'location owner':
+                # if role.id not in new role_ids, then we're removing a location owner assignment
+                if role.id not in role_ids:
+                    existing_owner_removal_guard = True
+
+        # If there are any location-scoped roles involved or potential owner removal, enforce delegation
+        if location_scoped_roles or existing_owner_removal_guard:
+            # Check caller's permissions
+            caller_perms = set()
+            if user and user.is_superadmin:
+                caller_allowed = True
+            else:
+                # compute caller permissions for this location
+                caller_perms = _get_user_location_permissions(user, business_id, location_id, db) if user else set()
+                caller_allowed = ('*' in caller_perms) or ('rbac.location_roles.manage' in caller_perms) or ('rbac.location_assignments.manage' in caller_perms)
+                # or if caller is a Location Owner at this location
+                if not caller_allowed and user:
+                    caller_allowed = _is_location_owner(user.id, location_id)
+
+            if not caller_allowed:
+                raise HTTPException(403, "Location-owner delegation required: missing rbac.location_roles.manage or location owner role")
+
+        # Delete existing assignments for this location
+        # Before delete, record removed assignments for auditing
+        removed_rows = db.execute(
+            select(MembershipLocationRole).where(
+                MembershipLocationRole.membership_id == membership_id,
+                MembershipLocationRole.location_id == location_id,
+            )
+        ).scalars().all()
+        removed_role_ids = [r.role_id for r in removed_rows]
+
+        db.execute(
+            delete(MembershipLocationRole).where(
+                MembershipLocationRole.membership_id == membership_id,
+                MembershipLocationRole.location_id == location_id,
+            )
+        )
+
+        # Audit removal if anything was removed
+        if removed_role_ids:
+            audit = AuditEvent(
+                business_id=business_id,
+                actor_type='user',
+                actor_id=user.id if user else None,
+                action='rbac.location_roles.remove',
+                entity='membership_location_role',
+                entity_id=membership_id,
+                diff_json=json.dumps({'location_id': location_id, 'removed_role_ids': removed_role_ids}),
+                created_at=_dt.now(_tz.utc),
+            )
+            db.add(audit)
+
+        # Add new ones
+        loc_labels = payload.job_title_labels.get(location_id, {})
+        for role in location_scoped_roles + [r for r in (db.execute(select(BizRole).where(BizRole.id == rid, BizRole.business_id == business_id)).scalars().all()) if False]:
+            # location_scoped_roles already populated; non-location roles handled below
+            pass
+        # Add all roles (we already validated and collected location_scoped_roles)
+        for role_id in role_ids:
+            role = db.execute(
+                select(BizRole).where(BizRole.id == role_id, BizRole.business_id == business_id)
+            ).scalar_one_or_none()
+            # role existence already validated
             db.add(MembershipLocationRole(
                 membership_id=membership_id,
                 location_id=location_id,
@@ -691,6 +811,20 @@ def set_member_location_roles(
                 job_title_label=loc_labels.get(role_id),
                 created_by_user_id=user.id if user else None,
             ))
+
+        # Audit additions
+        if role_ids:
+            audit = AuditEvent(
+                business_id=business_id,
+                actor_type='user',
+                actor_id=user.id if user else None,
+                action='rbac.location_roles.assign',
+                entity='membership_location_role',
+                entity_id=membership_id,
+                diff_json=json.dumps({'location_id': location_id, 'assigned_role_ids': role_ids}),
+                created_at=_dt.now(_tz.utc),
+            )
+            db.add(audit)
     db.commit()
     # Return updated state
     rows = db.execute(
