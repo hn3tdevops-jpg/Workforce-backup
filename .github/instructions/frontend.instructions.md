@@ -1,13 +1,22 @@
----
-applyTo: "{frontend/**/*.{ts,tsx,js,jsx},templates/**/*.html,static/**/*.css}"
----
+# Frontend instructions
 
-# Frontend / Template Instructions
+Apply these instructions when working on web UI, components, dashboards, design system, routing, or state handling.
 
-- Preserve dark-mode support.
-- Keep navigation grouped logically by domain.
-- Show business/location context where it matters to workflow.
-- Prefer reusable components and patterns.
-- Keep layouts clean and operationally focused.
-- Use consistent status labels and visual semantics.
-- Avoid clutter and one-off UI patterns when a shared pattern can be used.
+## UI strategy
+Build the interface as a workspace shell with widgets, not as a collection of rigid pages.
+
+## Widget rules
+Each widget should have:
+- stable id
+- clear title and purpose
+- permission requirements
+- explicit filters and inputs
+- predictable API contract
+- reusable internal structure
+
+## UX rules
+- tenant/location context must always be visible
+- navigation must be grouped logically
+- widget visibility must follow permissions
+- dark mode and layout persistence should be supported cleanly
+- design should favor operational clarity over decoration

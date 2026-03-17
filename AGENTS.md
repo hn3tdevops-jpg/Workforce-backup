@@ -1,71 +1,40 @@
-AGENTS.md
-Mission
-Implement the HN3T Workforce / Hospitable Ops platform safely and incrementally, using HN3T_MASTER_PLAN.md as the primary roadmap.
+# Workforce agent operating rules
 
-Primary planning source
-Before making architectural or feature decisions, read and align with:
+This repository is a multi-tenant service-operations platform.
 
-HN3T_MASTER_PLAN.md
-Also inspect nearby existing code before introducing new patterns.
+## Always optimize for
+- recoverability
+- tenant safety
+- scope-aware access control
+- small reviewable changes
+- clear project-control updates
 
-Operating mode
-Prefer small, reviewable, production-safe changes.
-Implement one complete feature slice at a time when possible.
-Reuse existing patterns, modules, and naming conventions.
-Avoid speculative redesigns unless explicitly requested.
-Execution priorities
-Prioritize work in this order:
+## Required workflow
+1. Inspect the existing code pattern before changing architecture.
+2. Describe the intended change in concrete terms.
+3. Make the smallest useful implementation.
+4. Run the relevant validation available in the repo.
+5. Update project-control docs for meaningful work.
 
-correctness
-tenant and location safety
-RBAC integrity
-maintainability
-consistency with repository patterns
-speed
-Mandatory safety rules
-Never weaken tenant isolation.
-Never weaken location scoping.
-Never bypass RBAC for convenience.
-Never hardcode secrets or credentials.
-Never replace stable architecture with a new framework unless explicitly requested.
-Never make destructive schema changes unless explicitly requested.
-Implementation behavior
-When asked to build or change something:
+## Required project-control updates
+When work is meaningful, update as applicable:
+- `docs/TODO.md`
+- `docs/WORKLOG.md`
+- `docs/DECISIONS.md`
+- `docs/CHANGELOG.md`
+- `docs/PHASE_STATUS.md`
 
-inspect the relevant files first
-map the request to the relevant section of HN3T_MASTER_PLAN.md
-implement the smallest complete change that solves the task
-update tests when appropriate
-keep code easy to review
-Backend expectations
-Keep API route handlers thin.
-Put business logic into services or equivalent domain modules.
-Use Pydantic v2 schemas explicitly.
-Use Alembic for schema changes.
-Respect SQLAlchemy and FastAPI patterns already present in the repo.
-Database and migration rules
-Treat schema work as production-grade work.
-Preserve data integrity with constraints and indexes where appropriate.
-Consider ownership, lifecycle, and auditability for every new entity.
-Avoid duplicate tables or near-duplicate concepts.
-Scope awareness
-For features involving users, employees, schedules, housekeeping, inspections, inventory, rooms, maintenance, vendors, reporting, or admin:
+## Architecture priorities
+1. tenant / business / location core
+2. RBAC with scope-aware permission checks
+3. shared workforce/time/scheduling modules
+4. shared communications, tasks, and inventory modules
+5. widget-first workspaces
+6. domain-specific packs on top of shared primitives
 
-verify tenant scope
-verify location scope
-verify permission scope
-verify audit implications
-Testing expectations
-For non-trivial changes:
-
-add or update tests
-cover at least one success case
-cover at least one failure or authorization case
-verify scope isolation where relevant
-Output expectations
-After making changes, summarize:
-
-what changed
-which files changed
-any important assumptions
-any follow-up work still needed
+## Do not do casually
+- change schema shape without migration planning
+- hard-code single-tenant assumptions
+- bypass permission-aware access patterns
+- add page-specific UI when a reusable widget fits
+- leave docs stale after structural changes
