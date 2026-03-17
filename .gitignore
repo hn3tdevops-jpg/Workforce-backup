@@ -23,3 +23,12 @@ build/
 # Node
 .next/
 .env
+.env
+.env.*
+!.env.example
+**/.env.local
+
+*.db
+*.db.bak*
+*.sqlite
+*.sqlite3
