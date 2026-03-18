@@ -12,3 +12,10 @@
 - Corrected test import path in `tests/conftest.py`
 - Confirmed canonical route inventory includes health, rooms, tasks, assignments, shifts, and bootstrap
 - Verified canonical test suite passes: 11 passed
+
+## 2026-03-16 — Normalized model registration and settings base
+- Updated canonical model registration to use `app.*` imports
+- Separated core model imports from domain model imports
+- Updated default database URL to async-compatible sqlite driver
+- Added cached settings loader
+- Confirmed next implementation target is Phase 1 tenancy and RBAC

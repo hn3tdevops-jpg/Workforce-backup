@@ -87,3 +87,14 @@ Decision:
 
 Rationale:
 This prevents accidental imports from legacy app roots and stops pytest from collecting unrelated projects on the machine.
+
+## D-0009 Core metadata and domain metadata must be separable
+Date: 2026-03-16
+Status: accepted
+
+Decision:
+- Canonical model registration must distinguish between core platform models and domain-specific models.
+- Domain modules must not be implicitly treated as part of the platform core.
+
+Rationale:
+The Workforce backend is a platform core first. Domain modules such as hospitality operations should be attachable without tightly coupling them to the base multi-tenant system.
