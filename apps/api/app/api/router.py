@@ -1,19 +1,17 @@
 from fastapi import APIRouter
 
+from app.api.v1.endpoints.assignments import router as assignments_router
+from app.api.v1.endpoints.bootstrap import router as bootstrap_router
+from app.api.v1.endpoints.health import router as health_router
+from app.api.v1.endpoints.rooms import router as rooms_router
+from app.api.v1.endpoints.shifts import router as shifts_router
+from app.api.v1.endpoints.tasks import router as tasks_router
+
 api_router = APIRouter()
 
-# Prefer importing auth and other v1 routers from the workforce package when available.
-# Import in try/except blocks so the API can still start even if some modules are not present.
-try:
-    from apps.api.app.api.v1.auth import routes as auth_routes
-    api_router.include_router(auth_routes.router, prefix="/auth", tags=["auth"])
-except Exception:
-    # If the workforce v1.auth package isn't available, skip including auth routes.
-    pass
-
-# Include bootstrap if present
-try:
-    from apps.api.app.api.routes import bootstrap
-    api_router.include_router(bootstrap.router)
-except Exception:
-    pass
+api_router.include_router(health_router, prefix="/health", tags=["health"])
+api_router.include_router(rooms_router, prefix="/rooms", tags=["rooms"])
+api_router.include_router(tasks_router, prefix="/tasks", tags=["tasks"])
+api_router.include_router(assignments_router, prefix="/assignments", tags=["assignments"])
+api_router.include_router(shifts_router, prefix="/shifts", tags=["shifts"])
+api_router.include_router(bootstrap_router, prefix="/bootstrap", tags=["bootstrap"])
