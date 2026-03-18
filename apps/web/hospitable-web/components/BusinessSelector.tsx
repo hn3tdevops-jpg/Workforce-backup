@@ -1,23 +1,28 @@
 "use client"
-import { useEffect, useState } from 'react'
+import { useAuth } from '../lib/auth-store'
 
 export default function BusinessSelector() {
-  const [businesses, setBusinesses] = useState<string[]>([])
+  const { memberships, businessId, switchBusiness } = useAuth()
 
-  useEffect(() => {
-    fetch('/api/me/businesses')
-      .then((r) => r.json())
-      .then((data) => setBusinesses(data.map((b: any) => b.name)))
-      .catch(() => setBusinesses(['Demo Business']))
-  }, [])
+  const onChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const id = e.target.value
+    await switchBusiness(id)
+  }
+
+  const disabled = memberships.length === 0
 
   return (
     <div>
       <label htmlFor="business">Business: </label>
-      <select id="business" name="business">
-        {businesses.map((b) => (
-          <option key={b}>{b}</option>
-        ))}
+      <select id="business" name="business" value={businessId ?? ''} onChange={onChange} disabled={disabled}>
+        {disabled ? (
+          <option value="" disabled>No businesses available</option>
+        ) : (
+          memberships.map((b: any) => {
+            const val = b.business_id
+            return <option key={val} value={val}>{val}</option>
+          })
+        )}
       </select>
     </div>
   )
