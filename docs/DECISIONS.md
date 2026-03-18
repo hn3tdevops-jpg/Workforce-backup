@@ -98,3 +98,13 @@ Decision:
 
 Rationale:
 The Workforce backend is a platform core first. Domain modules such as hospitality operations should be attachable without tightly coupling them to the base multi-tenant system.
+
+## D-0010 SQLite schema changes on existing tables use batch mode
+Date: 2026-03-18
+Status: accepted
+
+Decision:
+- SQLite migrations that alter existing tables and add/drop constraints must use Alembic batch mode.
+
+Rationale:
+SQLite does not support the same ALTER TABLE constraint operations as PostgreSQL. Batch mode avoids partial migration churn during foundation work.

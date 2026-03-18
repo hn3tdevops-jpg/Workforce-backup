@@ -19,3 +19,9 @@
 - Updated default database URL to async-compatible sqlite driver
 - Added cached settings loader
 - Confirmed next implementation target is Phase 1 tenancy and RBAC
+
+## 2026-03-18 — Fixed SQLite migration strategy for platform access control
+- `0003_platform_access_control` failed on SQLite because foreign key constraint creation on an existing table required batch mode
+- Updated the migration to use `batch_alter_table` for `businesses.tenant_id`
+- Rebuilt local dev DB from migrations after partial non-transactional DDL failure
+- Preserved stable backend/test checkpoint while continuing schema expansion
