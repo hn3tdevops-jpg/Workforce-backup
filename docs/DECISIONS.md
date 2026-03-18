@@ -75,3 +75,15 @@ Decision:
 
 Rationale:
 Root packaging, runtime imports, and Alembic must agree on one import path and one metadata source. Mixed import roots (`apps.api.app` vs `app`) will eventually cause broken migrations, runtime import failures, and deployment drift.
+
+## D-0008 Canonical backend contract must pass from repo root
+Date: 2026-03-16
+Status: accepted
+
+Decision:
+- Backend validation is performed from the repository root.
+- Canonical checks use `PYTHONPATH=apps/api`.
+- Canonical backend tests run with `pytest -q tests`.
+
+Rationale:
+This prevents accidental imports from legacy app roots and stops pytest from collecting unrelated projects on the machine.
