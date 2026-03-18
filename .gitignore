@@ -32,3 +32,6 @@ build/
 *.db.bak*
 *.sqlite
 *.sqlite3
+
+# local migration recovery backups
+dev.db.pre_*.bak
