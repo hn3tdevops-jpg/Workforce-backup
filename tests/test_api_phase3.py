@@ -24,11 +24,11 @@ def test_tasks_requires_authentication() -> None:
     response = client.get("/api/v1/tasks/")
     assert response.status_code == 401
 
-def test_assignments() -> None:
+def test_assignments_requires_authentication() -> None:
     response = client.get("/api/v1/assignments/")
-    assert response.status_code == 200
+    assert response.status_code == 401
 
 
-def test_shifts() -> None:
+def test_shifts_requires_authentication() -> None:
     response = client.get("/api/v1/shifts/")
-    assert response.status_code == 200
+    assert response.status_code == 401
