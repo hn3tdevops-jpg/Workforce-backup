@@ -16,10 +16,9 @@ def test_health() -> None:
     assert response.json() == {"status": "ok"}
 
 
-def test_rooms() -> None:
+def test_rooms_requires_authentication() -> None:
     response = client.get("/api/v1/rooms/")
-    assert response.status_code == 200
-
+    assert response.status_code == 401
 
 def test_tasks() -> None:
     response = client.get("/api/v1/tasks/")
