@@ -35,3 +35,11 @@ build/
 
 # local migration recovery backups
 dev.db.pre_*.bak
+
+# Secrets and env files (added by Copilot)
+.env
+.env.*
+*.pem
+*.key
+.env.bak
+.env.pre-migration.bak
