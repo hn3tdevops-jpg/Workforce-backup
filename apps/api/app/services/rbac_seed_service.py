@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
 from app.models.access_control import Permission, Role, RolePermission
@@ -139,3 +140,12 @@ def seed_default_roles_for_business(session: Session, business_id: uuid.UUID | s
 
     session.flush()
     return existing_roles
+
+
+async def async_seed_default_roles_for_business(
+    session: AsyncSession,
+    business_id: uuid.UUID | str,
+) -> dict[str, Role]:
+    return await session.run_sync(
+        lambda sync_session: seed_default_roles_for_business(sync_session, business_id)
+    )

@@ -8,22 +8,34 @@ async def test_bootstrap_creates_entities(client: AsyncClient) -> None:
         "/api/v1/bootstrap",
         json={
             "admin_email": "hn3torg@gmail.com",
-            "admin_password": "Punk@$$3773",
+            "admin_password": "BootstrapPass1!",
             "business_name": "HN3T Org",
             "location_name": "HQ",
         },
     )
+
     assert response.status_code == 201, response.text
+
     data = response.json()
-    assert "business_id" in data
-    assert "location_id" in data
-    assert "user_id" in data
+    assert data["business_id"]
+    assert data["location_id"]
+    assert data["user_id"]
 
 
 @pytest.mark.asyncio
 async def test_bootstrap_forbidden_when_users_exist(client: AsyncClient) -> None:
-    # Second call should be forbidden
-    response = await client.post(
+    first = await client.post(
+        "/api/v1/bootstrap",
+        json={
+            "admin_email": "first@example.com",
+            "admin_password": "BootstrapPass1!",
+            "business_name": "First Org",
+            "location_name": "HQ",
+        },
+    )
+    assert first.status_code == 201, first.text
+
+    second = await client.post(
         "/api/v1/bootstrap",
         json={
             "admin_email": "second@example.com",
@@ -32,4 +44,5 @@ async def test_bootstrap_forbidden_when_users_exist(client: AsyncClient) -> None
             "location_name": "Branch",
         },
     )
-    assert response.status_code == 403
+    assert second.status_code == 403
+    assert second.json()["detail"] == "Bootstrap is only allowed when no users exist."
