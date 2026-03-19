@@ -1,13 +1,11 @@
 "use client"
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { api, AuthUser, AuthMembership } from './api'
-
-type User = AuthUser
+import { api, type AuthUser, type AuthMembership } from './api'
 
 type AuthContextValue = {
   loading: boolean
-  user: User | null
+  user: AuthUser | null
   accessToken: string | null
   memberships: AuthMembership[]
   businessId: string | null
@@ -24,7 +22,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<AuthUser | null>(null)
   const [accessToken, setAccessToken] = useState<string | null>(null)
   const [memberships, setMemberships] = useState<AuthMembership[]>([])
   const [businessId, setBusinessId] = useState<string | null>(null)
@@ -34,7 +32,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const hydrate = async () => {
     setLoading(true)
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
+      const token =
+        typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
+
       if (!token) {
         setUser(null)
         setAccessToken(null)
@@ -44,7 +44,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setPermissions([])
         return
       }
+
       setAccessToken(token)
+
       const me = await api.auth.me()
       setUser(me.user)
       setMemberships(me.memberships ?? [])
@@ -55,16 +57,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Hydrate failed', e)
       setUser(null)
       setAccessToken(null)
-      localStorage.removeItem('access_token')
+      setMemberships([])
+      setBusinessId(null)
+      setRoles([])
+      setPermissions([])
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('access_token')
+      }
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    // hydrate on mount
     hydrate()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const login = async (email: string, password: string) => {
@@ -72,12 +78,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await api.auth.login(email, password)
       const token = res.access_token
-      if (!token) throw new Error('No access token returned')
+
+      if (!token) {
+        throw new Error('No access token returned')
+      }
+
       localStorage.setItem('access_token', token)
-      // persist business_id if provided by login response to speed up UX
+      setAccessToken(token)
+
       if (res.business_id) {
         setBusinessId(res.business_id)
       }
+
       await hydrate()
     } finally {
       setLoading(false)
@@ -85,7 +97,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const logout = () => {
-    localStorage.removeItem('access_token')
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('access_token')
+    }
     setUser(null)
     setAccessToken(null)
     setMemberships([])
@@ -94,21 +108,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setPermissions([])
   }
 
-  const switchBusiness = async (businessId: string) => {
+  const switchBusiness = async (nextBusinessId: string) => {
     setLoading(true)
     try {
-      const res = await api.auth.switchBusiness(businessId)
-      // If backend returned a rotated access token, persist it before hydrating
+      const res = await api.auth.switchBusiness(nextBusinessId)
       const newToken = res.access_token
+
       if (newToken) {
         localStorage.setItem('access_token', newToken)
         setAccessToken(newToken)
       }
-      // Update businessId if backend returned it directly
+
       if (res.business_id) {
         setBusinessId(res.business_id)
       }
-      // Re-hydrate the session from /auth/me (will use updated token)
+
       const me = await api.auth.me()
       setUser(me.user)
       setMemberships(me.memberships ?? [])
@@ -142,6 +156,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth() {
   const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider')
+  if (!ctx) {
+    throw new Error('useAuth must be used within AuthProvider')
+  }
   return ctx
 }
