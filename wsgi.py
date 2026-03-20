@@ -1,19 +1,24 @@
 import os
 import sys
 
-project_home = os.path.abspath(os.path.dirname(__file__))
-if project_home not in sys.path:
-    sys.path.insert(0, project_home)
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+API_ROOT = os.path.join(PROJECT_ROOT, "apps", "api")
+
+# Make canonical backend win import resolution
+for path in [API_ROOT, PROJECT_ROOT]:
+    if path in sys.path:
+        sys.path.remove(path)
+    sys.path.insert(0, path)
 
 from dotenv import load_dotenv
 
-env_path = os.environ.get("WORKFORCE_ENV_FILE", os.path.join(project_home, ".env"))
+env_path = os.environ.get("WORKFORCE_ENV_FILE", os.path.join(PROJECT_ROOT, ".env"))
 load_dotenv(env_path)
 
-os.environ.setdefault("ENV", "prod")
-os.environ.setdefault("DATABASE_URL", f"sqlite:////{project_home}/dev.db")
+os.environ.setdefault("APP_ENV", "prod")
+os.environ.setdefault("DATABASE_URL", f"sqlite+aiosqlite:///{PROJECT_ROOT}/dev.db")
 
 from a2wsgi import ASGIMiddleware
-from apps.api.app.main import app as asgi_app
+from app.main import app as asgi_app
 
 application = ASGIMiddleware(asgi_app)
