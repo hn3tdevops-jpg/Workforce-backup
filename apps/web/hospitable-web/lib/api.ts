@@ -4,7 +4,7 @@
  * The Next.js app proxies to the FastAPI backend in production.
  */
 
-const BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api-hn3t.pythonanywhere.com'
+const BASE = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://hn3t.pythonanywhere.com')
 
 function getClientAccessToken(): string | null {
   if (typeof window === 'undefined') return null
