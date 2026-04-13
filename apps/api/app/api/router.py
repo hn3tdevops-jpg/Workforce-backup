@@ -17,4 +17,5 @@ api_router.include_router(bootstrap_router, prefix="/bootstrap", tags=["bootstra
 api_router.include_router(rooms_router, prefix="/rooms", tags=["rooms"])
 api_router.include_router(tasks_router, prefix="/tasks", tags=["tasks"])
 api_router.include_router(assignments_router, prefix="/assignments", tags=["assignments"])
-api_router.include_router(shifts_router, prefix="/shifts", tags=["shifts"])\napi_router.include_router(me_router, prefix="/me", tags=["me"])
+api_router.include_router(shifts_router, prefix="/shifts", tags=["shifts"])
+api_router.include_router(me_router, prefix="/me", tags=["me"])
