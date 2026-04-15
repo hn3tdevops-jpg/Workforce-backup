@@ -1,5 +1,8 @@
 # Worklog
 
+## 2026-04-13
+- Added location-aware permission dependency and resolve_location_from_query helper; updated v1 endpoints to accept location_id query param.
+
 ## 2026-03-16
 - Created repo-base scaffold for Workforce.
 - Added planning, control, Copilot, and recovery files.

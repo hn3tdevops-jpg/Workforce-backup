@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
+from typing import Callable, Any
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -80,6 +81,76 @@ async def get_current_auth_context(
         claims=claims,
     )
 
+
+from fastapi import Query
+
+def resolve_location_from_query(location_id: str | None = Query(None)) -> uuid.UUID | None:
+    """Resolve a location_id from query parameters and return a UUID or None.
+
+    This is a simple resolver intended for list endpoints that accept an
+    optional `location_id` query parameter. It returns None on parse error
+    to preserve existing business-scoped behavior.
+    """
+    if location_id is None:
+        return None
+    try:
+        return uuid.UUID(location_id)
+    except ValueError:
+        return None
+
+
+def require_permission_with_location(permission_code: str, location_resolver: Callable[..., Any] | None = None):
+    """Compatibility helper: permission dependency that optionally accepts
+    a location resolver dependency and forwards the resolved location_id
+    into the permission check.
+    """
+    # If no resolver is provided, fall back to business-scoped checks.
+    if location_resolver is None:
+        async def dependency(
+            auth: AuthContext = Depends(get_current_auth_context),
+            session: AsyncSession = Depends(get_async_session),
+        ) -> AuthContext:
+            allowed = await session.run_sync(
+                lambda sync_session: user_has_permission(
+                    sync_session,
+                    auth.user_id,
+                    permission_code,
+                    auth.business_id,
+                    None,
+                )
+            )
+            if not allowed:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Not enough permissions.",
+                )
+            return auth
+
+        return dependency
+
+    # Location-aware dependency
+    async def dependency(
+        auth: AuthContext = Depends(get_current_auth_context),
+        session: AsyncSession = Depends(get_async_session),
+        location_id: Any = Depends(location_resolver),
+    ) -> AuthContext:
+        allowed = await session.run_sync(
+            lambda sync_session: user_has_permission(
+                sync_session,
+                auth.user_id,
+                permission_code,
+                auth.business_id,
+                location_id,
+            )
+        )
+        if not allowed:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not enough permissions.",
+            )
+        return auth
+
+    return dependency
 
 def require_permission(permission_code: str):
     async def dependency(

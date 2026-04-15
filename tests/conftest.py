@@ -1,3 +1,10 @@
+import sys
+import pathlib
+
+# Ensure repository root is on sys.path so tests can import the 'app' package
+# Add the apps/api directory where the 'app' package lives
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / 'apps' / 'api'))
+
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine

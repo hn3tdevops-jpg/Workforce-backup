@@ -16,7 +16,7 @@ Phase 0 — Foundation Freeze
 - [ ] Define tenant/business/location schema
 - [ ] Define memberships and scoped role assignments
 - [ ] Define atomic permission catalog
-- [ ] Add permission-resolution helpers
+- [x] Add permission-resolution helpers
 - [ ] Add audit/event tables
 
 ## Later
