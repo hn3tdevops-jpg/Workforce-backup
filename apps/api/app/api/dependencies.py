@@ -7,13 +7,13 @@ from typing import Callable, Any
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError
-from sqlalchemy import select
+from sqlalchemy import select, cast, String
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.security import decode_access_token
-from app.db.session import get_async_session
-from app.models.user import User
-from app.services.rbac_service import user_has_permission
+from apps.api.app.core.security import decode_access_token
+from apps.api.app.db.session import get_async_session
+from apps.api.app.models.user import User
+from apps.api.app.services.rbac_service import user_has_permission
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -64,7 +64,7 @@ async def get_current_auth_context(
 
     user = await session.scalar(
         select(User).where(
-            User.id == user_id,
+            cast(User.id, String) == str(user_id),
             User.is_active.is_(True),
         )
     )
