@@ -295,3 +295,36 @@ async def test_switch_business_forbidden_without_membership(
     )
     assert switch_response.status_code == 403
     assert switch_response.json()["detail"] == "User does not have access to that business."
+
+
+# --- New tests for /auth/register ---
+@pytest.mark.asyncio
+async def test_register_creates_user(client: AsyncClient, db_session: AsyncSession) -> None:
+    email = f"reg-{uuid.uuid4().hex[:8]}@example.com"
+    response = await client.post(
+        "/api/v1/auth/register",
+        json={"email": email, "password": "RegPass1!"},
+    )
+    assert response.status_code == 201, response.text
+    data = response.json()
+    assert data["email"] == email
+
+    user = await db_session.scalar(select(User).where(User.email == email))
+    assert user is not None
+
+
+@pytest.mark.asyncio
+async def test_register_duplicate_fails(client: AsyncClient) -> None:
+    email = f"dup-{uuid.uuid4().hex[:8]}@example.com"
+    resp1 = await client.post(
+        "/api/v1/auth/register",
+        json={"email": email, "password": "RegPass1!"},
+    )
+    assert resp1.status_code == 201, resp1.text
+
+    resp2 = await client.post(
+        "/api/v1/auth/register",
+        json={"email": email, "password": "OtherPass1!"},
+    )
+    assert resp2.status_code == 400
+    assert "Email already registered" in resp2.json().get("detail", "")
