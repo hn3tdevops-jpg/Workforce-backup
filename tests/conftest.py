@@ -12,6 +12,11 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.pool import StaticPool
 
 from apps.api.app.db.base import Base, import_models
+
+# Ensure core app models are imported and registered early to avoid duplicate
+# SQLAlchemy Table registration when tests import model modules during collection.
+import_models()
+
 from apps.api.app.db.session import get_async_session
 # Import the FastAPI app lazily inside the client fixture so tests control when models
 # are imported/registered and avoid duplicate SQLAlchemy table definitions.
