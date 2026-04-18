@@ -31,8 +31,9 @@ async def seed_user(
         is_active=is_active,
     )
 
-    db_session.add_all([tenant, business, location, user])
-    await db_session.flush()
+    # Use run_sync so all writes happen on the same underlying SyncSession
+    await db_session.run_sync(lambda sync: sync.add_all([tenant, business, location, user]))
+    await db_session.run_sync(lambda sync: sync.flush())
 
     if with_membership:
         membership = Membership(
@@ -42,8 +43,8 @@ async def seed_user(
             status="active",
             is_owner=with_owner_assignment,
         )
-        db_session.add(membership)
-        await db_session.flush()
+        await db_session.run_sync(lambda sync: sync.add(membership))
+        await db_session.run_sync(lambda sync: sync.flush())
 
         if with_owner_assignment:
             await async_seed_default_roles_for_business(db_session, business.id)
@@ -53,16 +54,16 @@ async def seed_user(
                     Role.name == "Owner",
                 )
             )
-            db_session.add(
+            await db_session.run_sync(lambda sync: sync.add(
                 ScopedRoleAssignment(
                     id=uuid.uuid4(),
                     membership_id=membership.id,
                     role_id=owner_role.id,
                     location_id=None,
                 )
-            )
+            ))
 
-    await db_session.commit()
+    await db_session.run_sync(lambda sync: sync.commit())
     return user, business
 
 
@@ -89,8 +90,8 @@ async def add_second_business_membership(
         is_owner=True,
     )
 
-    db_session.add_all([second_business, second_location, second_membership])
-    await db_session.flush()
+    await db_session.run_sync(lambda sync: sync.add_all([second_business, second_location, second_membership]))
+    await db_session.run_sync(lambda sync: sync.flush())
 
     await async_seed_default_roles_for_business(db_session, second_business.id)
     owner_role = await db_session.scalar(
@@ -99,16 +100,16 @@ async def add_second_business_membership(
             Role.name == "Owner",
         )
     )
-    db_session.add(
+    await db_session.run_sync(lambda sync: sync.add(
         ScopedRoleAssignment(
             id=uuid.uuid4(),
             membership_id=second_membership.id,
             role_id=owner_role.id,
             location_id=None,
         )
-    )
+    ))
 
-    await db_session.commit()
+    await db_session.run_sync(lambda sync: sync.commit())
     return second_business
 
 
@@ -116,8 +117,8 @@ async def create_unrelated_business(db_session: AsyncSession) -> Business:
     tenant = Tenant(id=uuid.uuid4(), name="Other Tenant", slug=f"tenant-{uuid.uuid4().hex[:8]}")
     business = Business(id=uuid.uuid4(), tenant_id=tenant.id, name="Other Business")
     location = Location(id=uuid.uuid4(), business_id=business.id, name="Other Location")
-    db_session.add_all([tenant, business, location])
-    await db_session.commit()
+    await db_session.run_sync(lambda sync: sync.add_all([tenant, business, location]))
+    await db_session.run_sync(lambda sync: sync.commit())
     return business
 
 

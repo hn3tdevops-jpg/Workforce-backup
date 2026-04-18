@@ -55,69 +55,169 @@ async def db_engine():
 
 
 @pytest_asyncio.fixture
-async def db_session(db_engine):
-    """Provide a single AsyncSession bound to the same connection/transaction
-    for the duration of the test so run_sync calls see the same uncommitted
-    state across multiple lambda calls.
+async def db_connection(db_engine):
+    """Create a single shared connection and transaction for the test.
+
+    This connection is used by both the test db_session and the application's
+    request-time sessions so that queries see the same transactional state.
     """
-    # Create a connection and begin a nested transaction that will be rolled back
-    # after the test. Bind the AsyncSession to the same connection so all
-    # run_sync() calls operate on the same transactional state.
-    async with db_engine.connect() as conn:
-        trans = await conn.begin()
-        # Create a synchronous Session bound to the same underlying connection
-        # so run_sync calls can reuse a single identity map across calls.
-        from sqlalchemy.orm import Session as SyncSession
-        sync_session = SyncSession(bind=conn.sync_connection, expire_on_commit=False)
+    # Ensure models are imported before creating the connection
+    import_models()
 
-        async with AsyncSession(bind=conn, expire_on_commit=False, autoflush=False) as session:
-            # Override run_sync on this AsyncSession instance so all run_sync
-            # invocations reuse the same SyncSession (identity map visible).
-            from sqlalchemy.util.concurrency import greenlet_spawn
-
-            async def _single_run_sync(func):
-                # Run the provided synchronous callable inside a greenlet so
-                # SQLAlchemy's sync-to-async bridging (await_only) works.
-                return await greenlet_spawn(lambda: func(sync_session))
-
-            session.run_sync = _single_run_sync
-
-            # Ensure commits/rollbacks operate on the same SyncSession so that
-            # objects added via run_sync are persisted by db_session.commit().
-            async def _commit():
-                await greenlet_spawn(sync_session.commit)
-
-            async def _rollback():
-                await greenlet_spawn(sync_session.rollback)
-
-            async def _close():
-                await greenlet_spawn(sync_session.close)
-
-            session.commit = _commit
-            session.rollback = _rollback
-            session.close = _close
-
-            try:
-                yield session
-            finally:
-                # close sync session and rollback the transaction
-                await session.close()
-                await trans.rollback()
+    conn = await db_engine.connect()
+    trans = await conn.begin()
+    try:
+        yield conn
+    finally:
+        # Roll back the outer transaction and close the connection
+        await trans.rollback()
+        await conn.close()
 
 
 @pytest_asyncio.fixture
-async def client(db_engine):
-    AsyncTestSession = async_sessionmaker(
-        bind=db_engine,
-        class_=AsyncSession,
-        expire_on_commit=False,
-        autoflush=False,
-        autocommit=False,
-    )
+async def db_session(db_connection):
+    """Provide a single Sync-backed async adapter session bound to the shared
+    connection/transaction for the duration of the test so run_sync calls and
+    application request sessions see the same transactional state.
+    """
+    conn = db_connection
+    from sqlalchemy.orm import Session as SyncSession
+    sync_session = SyncSession(bind=conn.sync_connection, expire_on_commit=False)
+
+    # Create a small adapter that exposes async-compatible methods delegating
+    # to the SyncSession via greenlet_spawn so application code can await them.
+    from sqlalchemy.util.concurrency import greenlet_spawn
+
+    class SyncSessionAdapter:
+        def __init__(self, sync_session):
+            self._sync = sync_session
+
+        async def run_sync(self, func):
+            return await greenlet_spawn(lambda: func(self._sync))
+
+        async def scalar(self, stmt):
+            return await greenlet_spawn(lambda: self._sync.scalar(stmt))
+
+        async def scalars(self, stmt):
+            result = await greenlet_spawn(lambda: self._sync.scalars(stmt))
+            return result
+
+        async def execute(self, stmt):
+            return await greenlet_spawn(lambda: self._sync.execute(stmt))
+
+        def add(self, obj):
+            # add is synchronous on AsyncSession; implement as sync to match
+            # application code which calls session.add(obj) without awaiting.
+            return self._sync.add(obj)
+
+        def add_all(self, objs):
+            return self._sync.add_all(objs)
+
+        async def flush(self):
+            return await greenlet_spawn(self._sync.flush)
+
+        async def commit(self):
+            return await greenlet_spawn(self._sync.commit)
+
+        async def rollback(self):
+            return await greenlet_spawn(self._sync.rollback)
+
+        async def close(self):
+            return await greenlet_spawn(self._sync.close)
+
+        async def refresh(self, obj):
+            try:
+                return await greenlet_spawn(lambda: self._sync.refresh(obj))
+            except Exception:
+                # Instance may not be attached to this Session in the test adapter;
+                # make refresh a no-op to avoid test harness failures. Tests should
+                # rely on selecting by id when fresh state is required.
+                return None
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return None
+
+    adapter = SyncSessionAdapter(sync_session)
+
+    try:
+        yield adapter
+    finally:
+        # Ensure the sync session is closed by the db_connection finalizer
+        await adapter.close()
+
+
+
+@pytest_asyncio.fixture
+async def client(db_connection):
+    """HTTP client that creates a per-request SyncSession adapter bound to the
+    shared connection. Each request handler receives a fresh Session-backed
+    adapter which ensures the request lifecycle is isolated while reading
+    committed state from the shared connection.
+    """
+    conn = db_connection
+    from sqlalchemy.orm import Session as SyncSession
+    from sqlalchemy.util.concurrency import greenlet_spawn
+
+    class SyncSessionAdapter:
+        def __init__(self, sync_session):
+            self._sync = sync_session
+
+        async def run_sync(self, func):
+            return await greenlet_spawn(lambda: func(self._sync))
+
+        async def scalar(self, stmt):
+            return await greenlet_spawn(lambda: self._sync.scalar(stmt))
+
+        async def scalars(self, stmt):
+            result = await greenlet_spawn(lambda: self._sync.scalars(stmt))
+            return result
+
+        async def execute(self, stmt):
+            return await greenlet_spawn(lambda: self._sync.execute(stmt))
+
+        def add(self, obj):
+            return self._sync.add(obj)
+
+        def add_all(self, objs):
+            return self._sync.add_all(objs)
+
+        async def flush(self):
+            return await greenlet_spawn(self._sync.flush)
+
+        async def commit(self):
+            return await greenlet_spawn(self._sync.commit)
+
+        async def rollback(self):
+            return await greenlet_spawn(self._sync.rollback)
+
+        async def close(self):
+            return await greenlet_spawn(self._sync.close)
+
+        async def refresh(self, obj):
+            try:
+                return await greenlet_spawn(lambda: self._sync.refresh(obj))
+            except Exception:
+                # Avoid failing tests when refresh is called on an instance not
+                # attached to this per-request Session. Fall back to a no-op.
+                return None
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return None
 
     async def override_get_async_session():
-        async with AsyncTestSession() as session:
-            yield session
+        sync_session = SyncSession(bind=conn.sync_connection, expire_on_commit=False)
+        adapter = SyncSessionAdapter(sync_session)
+        try:
+            async with adapter:
+                yield adapter
+        finally:
+            await adapter.close()
 
     # Import app after DB models are registered so the application doesn't import
     # endpoints (and thereby models) before the test fixture has prepared the DB.

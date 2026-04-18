@@ -9,7 +9,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '0002_normalize_uuid_columns'
-down_revision = '0001_initial'
+down_revision = '0001_create_employee_and_user_employee_link_tables'
 branch_labels = None
 depends_on = None
 

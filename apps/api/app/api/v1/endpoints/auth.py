@@ -88,16 +88,6 @@ async def _load_active_memberships(
     memberships = await session.run_sync(
         lambda sync_session: get_active_memberships_for_user(sync_session, user_id)
     )
-    # Log membership IDs and business_ids for debugging
-    try:
-        import logging
-        logger = logging.getLogger(__name__)
-        print(
-            "DEBUG _load_active_memberships: user_id=", user_id, "memberships=",
-            [dict(id=str(m.id), business_id=str(m.business_id), status=m.status) for m in memberships],
-        )
-    except Exception:
-        pass
     return memberships
 
 
@@ -236,7 +226,7 @@ async def login(
         )
 
         # DEBUG: show hashed password and verification result when running tests
-        # Temporarily print to stdout so pytest captures the values while debugging
+
         valid_pw = user is not None and verify_password(payload.password, user.hashed_password)
         if user is None or not valid_pw:
             raise HTTPException(
