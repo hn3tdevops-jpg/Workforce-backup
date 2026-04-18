@@ -33,8 +33,18 @@ def ensure_business_membership(
 
     Returns a dict with keys: business_id, membership_id, owner_role_id, created (bool)
     """
-    # Ensure models are loaded
-    import_models()
+    # Ensure models are loaded. import_models() may raise in test contexts where
+    # the `app` package name is not present; fall back to importing the apps.api.app
+    # model modules directly to be robust in different import layouts.
+    try:
+        import_models()
+    except Exception:
+        # Best-effort: import explicit modules by package path
+        import importlib
+
+        importlib.import_module("apps.api.app.models.tenant")
+        importlib.import_module("apps.api.app.models.user")
+        importlib.import_module("apps.api.app.models.access_control")
 
     # Lookup user
     user = db.query(User).filter(User.email == user_email).one_or_none()
