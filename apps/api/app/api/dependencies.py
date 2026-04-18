@@ -7,7 +7,7 @@ from typing import Callable, Any
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError
-from sqlalchemy import select, cast, String
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from apps.api.app.core.security import decode_access_token
@@ -64,7 +64,7 @@ async def get_current_auth_context(
 
     user = await session.scalar(
         select(User).where(
-            cast(User.id, String) == str(user_id),
+            User.id == user_id,
             User.is_active.is_(True),
         )
     )
