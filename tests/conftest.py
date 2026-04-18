@@ -65,10 +65,24 @@ async def db_session(db_engine):
     # run_sync() calls operate on the same transactional state.
     async with db_engine.connect() as conn:
         trans = await conn.begin()
+        # Create a synchronous Session bound to the same underlying connection
+        # so run_sync calls can reuse a single identity map across calls.
+        from sqlalchemy.orm import Session as SyncSession
+        sync_session = SyncSession(bind=conn.sync_connection)
+
         async with AsyncSession(bind=conn, expire_on_commit=False, autoflush=False) as session:
+            # Override run_sync on this AsyncSession instance so all run_sync
+            # invocations reuse the same SyncSession (identity map visible).
+            async def _single_run_sync(func):
+                return func(sync_session)
+
+            session.run_sync = _single_run_sync
+
             try:
                 yield session
             finally:
+                # close sync session and rollback the transaction
+                sync_session.close()
                 await session.close()
                 await trans.rollback()
 
