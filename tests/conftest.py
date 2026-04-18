@@ -68,7 +68,7 @@ async def db_session(db_engine):
         # Create a synchronous Session bound to the same underlying connection
         # so run_sync calls can reuse a single identity map across calls.
         from sqlalchemy.orm import Session as SyncSession
-        sync_session = SyncSession(bind=conn.sync_connection)
+        sync_session = SyncSession(bind=conn.sync_connection, expire_on_commit=False)
 
         async with AsyncSession(bind=conn, expire_on_commit=False, autoflush=False) as session:
             # Override run_sync on this AsyncSession instance so all run_sync
