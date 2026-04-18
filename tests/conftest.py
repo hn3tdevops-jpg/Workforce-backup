@@ -73,8 +73,12 @@ async def db_session(db_engine):
         async with AsyncSession(bind=conn, expire_on_commit=False, autoflush=False) as session:
             # Override run_sync on this AsyncSession instance so all run_sync
             # invocations reuse the same SyncSession (identity map visible).
+            from sqlalchemy.util.concurrency import greenlet_spawn
+
             async def _single_run_sync(func):
-                return func(sync_session)
+                # Run the provided synchronous callable inside a greenlet so
+                # SQLAlchemy's sync-to-async bridging (await_only) works.
+                return await greenlet_spawn(lambda: func(sync_session))
 
             session.run_sync = _single_run_sync
 
