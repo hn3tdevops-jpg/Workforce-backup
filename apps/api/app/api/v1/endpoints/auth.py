@@ -225,10 +225,8 @@ async def login(
         )
 
         # DEBUG: show hashed password and verification result when running tests
-        import logging
-        logging.getLogger('auth_debug').debug('login attempt for %s hashed=%s', payload.email, getattr(user, 'hashed_password', None))
+        # Temporarily print to stdout so pytest captures the values while debugging
         valid_pw = user is not None and verify_password(payload.password, user.hashed_password)
-        logging.getLogger('auth_debug').debug('password valid: %s', valid_pw)
         if user is None or not valid_pw:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,

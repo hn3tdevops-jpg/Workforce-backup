@@ -5,11 +5,11 @@ from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.security import hash_password
-from app.models.access_control import Membership, Role, ScopedRoleAssignment
-from app.models.tenant import Business, Location, Tenant
-from app.models.user import User
-from app.services.rbac_seed_service import async_seed_default_roles_for_business
+from apps.api.app.core.security import hash_password
+from apps.api.app.models.access_control import Membership, Role, ScopedRoleAssignment
+from apps.api.app.models.tenant import Business, Location, Tenant
+from apps.api.app.models.user import User
+from apps.api.app.services.rbac_seed_service import async_seed_default_roles_for_business
 
 
 async def seed_user(

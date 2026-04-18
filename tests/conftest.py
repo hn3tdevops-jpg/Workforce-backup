@@ -1,18 +1,21 @@
 import sys
 import pathlib
 
-# Ensure repository root is on sys.path so tests can import the 'app' package
-# Add the apps/api directory where the 'app' package lives
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / 'apps' / 'api'))
+# Use the canonical package namespace for tests. Always import apps.api.app so
+# models are registered under a single package name and avoid duplicate MetaData.
+import apps.api.app  # ensure package is importable
+_using_installed_pkg = True
 
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
-from app.db.base import Base, import_models
-from app.db.session import get_async_session
-from app.main import app
+from apps.api.app.db.base import Base, import_models
+from apps.api.app.db.session import get_async_session
+# Import the FastAPI app lazily inside the client fixture so tests control when models
+# are imported/registered and avoid duplicate SQLAlchemy table definitions.
+# from app.main import app
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
@@ -25,6 +28,7 @@ async def db_engine():
         TEST_DATABASE_URL,
         future=True,
         poolclass=StaticPool,
+        connect_args={"check_same_thread": False},
     )
 
     async with engine.begin() as conn:
@@ -65,6 +69,10 @@ async def client(db_engine):
     async def override_get_async_session():
         async with AsyncTestSession() as session:
             yield session
+
+    # Import app after DB models are registered so the application doesn't import
+    # endpoints (and thereby models) before the test fixture has prepared the DB.
+    from apps.api.app.main import app  # local import
 
     app.dependency_overrides[get_async_session] = override_get_async_session
 
