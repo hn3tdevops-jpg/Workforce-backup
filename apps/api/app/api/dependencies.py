@@ -67,6 +67,13 @@ async def get_current_auth_context(
             detail="Access token contains invalid identifiers.",
         ) from exc
 
+    # Debug: list all users visible to this session
+    try:
+        users = (await session.scalars(select(User))).all()
+        print("DEBUG get_current_auth_context: all users=", [dict(id=str(u.id), email=u.email, is_active=u.is_active) for u in users])
+    except Exception as _:
+        print("DEBUG get_current_auth_context: failed to list all users")
+
     user = await session.scalar(
         select(User).where(
             User.id == user_id,
