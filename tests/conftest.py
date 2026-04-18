@@ -1,8 +1,15 @@
 import sys
 import pathlib
 
-# Use the canonical package namespace for tests. Always import apps.api.app so
-# models are registered under a single package name and avoid duplicate MetaData.
+# Use the canonical package namespace for tests. Ensure packages/workforce models
+# are not auto-inserted into apps.api.app.__path__ during pytest collection which
+# can cause duplicate SQLAlchemy Table registration. Set an env var that the
+# apps.api.app.models package honors to skip the optional path-extension.
+import os
+os.environ.setdefault("SKIP_WORKFORCE_MODELS", "1")
+
+# Always import apps.api.app so models are registered under a single package name
+# and avoid duplicate MetaData.
 import apps.api.app  # ensure package is importable
 _using_installed_pkg = True
 
