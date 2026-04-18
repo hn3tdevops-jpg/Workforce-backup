@@ -85,9 +85,21 @@ async def _load_active_memberships(
     session: AsyncSession,
     user_id: uuid.UUID,
 ) -> list[Membership]:
-    return await session.run_sync(
+    memberships = await session.run_sync(
         lambda sync_session: get_active_memberships_for_user(sync_session, user_id)
     )
+    # Log membership IDs and business_ids for debugging
+    try:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(
+            "_load_active_memberships: user_id=%s memberships=%s",
+            user_id,
+            [dict(id=str(m.id), business_id=str(m.business_id), status=m.status) for m in memberships],
+        )
+    except Exception:
+        pass
+    return memberships
 
 
 def _choose_membership(

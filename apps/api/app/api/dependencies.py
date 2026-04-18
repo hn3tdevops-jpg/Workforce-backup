@@ -5,6 +5,9 @@ from dataclasses import dataclass
 from typing import Callable, Any
 
 from fastapi import Depends, HTTPException, status
+import logging
+logger = logging.getLogger(__name__)
+
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError
 from sqlalchemy import select
@@ -38,6 +41,7 @@ async def get_current_auth_context(
 
     try:
         claims = decode_access_token(credentials.credentials)
+        logger.info("get_current_auth_context: decoded claims=%s", claims)
     except JWTError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -46,6 +50,7 @@ async def get_current_auth_context(
 
     sub = claims.get("sub")
     business_id_raw = claims.get("business_id")
+    logger.info("get_current_auth_context: raw sub=%s business_id_raw=%s", sub, business_id_raw)
 
     if not sub or not business_id_raw:
         raise HTTPException(
@@ -68,6 +73,7 @@ async def get_current_auth_context(
             User.is_active.is_(True),
         )
     )
+    logger.info("get_current_auth_context: resolved user_id=%s query_result=%s", user_id, getattr(user, 'id', None))
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
