@@ -56,16 +56,21 @@ async def db_engine():
 
 @pytest_asyncio.fixture
 async def db_session(db_engine):
-    AsyncTestSession = async_sessionmaker(
-        bind=db_engine,
-        class_=AsyncSession,
-        expire_on_commit=False,
-        autoflush=False,
-        autocommit=False,
-    )
-
-    async with AsyncTestSession() as session:
-        yield session
+    """Provide a single AsyncSession bound to the same connection/transaction
+    for the duration of the test so run_sync calls see the same uncommitted
+    state across multiple lambda calls.
+    """
+    # Create a connection and begin a nested transaction that will be rolled back
+    # after the test. Bind the AsyncSession to the same connection so all
+    # run_sync() calls operate on the same transactional state.
+    async with db_engine.connect() as conn:
+        trans = await conn.begin()
+        async with AsyncSession(bind=conn, expire_on_commit=False, autoflush=False) as session:
+            try:
+                yield session
+            finally:
+                await session.close()
+                await trans.rollback()
 
 
 @pytest_asyncio.fixture
