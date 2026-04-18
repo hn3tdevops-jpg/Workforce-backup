@@ -2,12 +2,14 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, status
 import uuid
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from apps.api.app.db.session import get_async_session
 from apps.api.app.schemas.employee import EmployeeCreate, EmployeeRead, UserEmployeeLinkCreate, UserEmployeeLinkRead
 from apps.api.app.services.employee_service import create_employee, link_user_to_employee
 from apps.api.app.api.dependencies import require_permission, get_current_auth_context
+from apps.api.app.models.user_employee_link import UserEmployeeLink
 
 router = APIRouter()
 
