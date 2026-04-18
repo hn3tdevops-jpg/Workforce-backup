@@ -9,7 +9,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '0001_create_employee_and_user_employee_link_tables'
-down_revision = None
+down_revision = '0003_platform_access_control'
 branch_labels = None
 depends_on = None
 
