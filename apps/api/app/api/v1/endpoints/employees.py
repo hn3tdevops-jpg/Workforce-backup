@@ -8,7 +8,7 @@ from apps.api.app.schemas.employee import EmployeeCreate, EmployeeRead, UserEmpl
 from apps.api.app.services.employee_service import create_employee, link_user_to_employee
 from apps.api.app.api.dependencies import require_permission, get_current_auth_context
 
-router = APIRouter(prefix="/employees")
+router = APIRouter()
 
 
 @router.post("/", response_model=EmployeeRead, status_code=201)
