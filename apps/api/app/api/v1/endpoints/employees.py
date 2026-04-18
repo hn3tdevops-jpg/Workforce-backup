@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, status
+import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from apps.api.app.db.session import get_async_session
@@ -27,7 +28,7 @@ async def post_employee(payload: EmployeeCreate, session: AsyncSession = Depends
 
 
 @router.post("/link-user/{user_id}", response_model=UserEmployeeLinkRead, status_code=201)
-async def post_link_user(user_id: str, payload: UserEmployeeLinkCreate, session: AsyncSession = Depends(get_async_session), auth = Depends(require_permission("users.manage"))):
+async def post_link_user(user_id: uuid.UUID, payload: UserEmployeeLinkCreate, session: AsyncSession = Depends(get_async_session), auth = Depends(require_permission("users.manage"))):
     # auth is AuthContext
     link = await link_user_to_employee(session, auth, user_id, payload.employee_id)
     return UserEmployeeLinkRead(
