@@ -28,6 +28,13 @@ def import_domain_models() -> None:
         import apps.api.app.modules.hospitable.models.property_ops  # noqa: F401
 
 
-def import_models() -> None:
+
+def import_models(*args, **kwargs) -> None:
+    """Import model modules.
+
+    Accept arbitrary args/kwargs for compatibility with SQLAlchemy's
+    Session.run_sync which forwards the session as the first positional
+    argument.
+    """
     import_core_models()
     import_domain_models()
