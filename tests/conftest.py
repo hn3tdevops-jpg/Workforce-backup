@@ -82,11 +82,25 @@ async def db_session(db_engine):
 
             session.run_sync = _single_run_sync
 
+            # Ensure commits/rollbacks operate on the same SyncSession so that
+            # objects added via run_sync are persisted by db_session.commit().
+            async def _commit():
+                await greenlet_spawn(sync_session.commit)
+
+            async def _rollback():
+                await greenlet_spawn(sync_session.rollback)
+
+            async def _close():
+                await greenlet_spawn(sync_session.close)
+
+            session.commit = _commit
+            session.rollback = _rollback
+            session.close = _close
+
             try:
                 yield session
             finally:
                 # close sync session and rollback the transaction
-                sync_session.close()
                 await session.close()
                 await trans.rollback()
 
