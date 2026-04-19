@@ -23,7 +23,7 @@ except Exception:
             return await call_next(request)
 
 from .api.router import api_router
-from .db.base import import_models
+from .db.base import import_models  # noqa: F401
 
 # Ensure all SQLAlchemy models are registered before startup/migrations.
 # import_models()  # deliberately not called at import time to avoid double-registration

@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from datetime import timezone
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, Path, Query, Security, status
+from fastapi import Depends, HTTPException, Path, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError
 from sqlalchemy import select

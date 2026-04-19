@@ -2,7 +2,6 @@
 Minimal implementation: _require_perm(user_id, business_id, perm_key, db) raises PermissionError if not allowed.
 """
 from typing import Optional
-from apps.api.app.core.db import get_db_session
 import sqlalchemy as sa
 
 class PermissionDenied(Exception):

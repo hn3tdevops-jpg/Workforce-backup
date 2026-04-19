@@ -9,7 +9,7 @@ import bcrypt as _bcrypt
 from jose import jwt
 from passlib.context import CryptContext
 
-from app.core.config import settings
+from apps.api.app.core.config import settings
 
 # ── Passwords ────────────────────────────────────────────────────────────────
 

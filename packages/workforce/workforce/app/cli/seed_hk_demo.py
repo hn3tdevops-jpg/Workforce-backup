@@ -149,7 +149,7 @@ def run_hk_seed():
                 db.flush()
                 print(f"  ✚ task: room {room.room_number} → {tt.name} @ {start} [{priority.value}]")
 
-        print(f"\n✅  HKops seed complete.")
+        print("\n✅  HKops seed complete.")
         print(f"   Business ID : {biz.id}")
         print(f"   Rooms seeded: {len(rooms)}")
         print(f"   Task types  : {len(task_types)}")

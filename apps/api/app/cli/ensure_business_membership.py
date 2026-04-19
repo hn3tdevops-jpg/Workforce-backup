@@ -6,13 +6,12 @@ that uses the repo's db_session() context manager.
 from __future__ import annotations
 
 import uuid
-from typing import Optional
 
 from apps.api.app.db.base import import_models
 from apps.api.app.core.db import db_session
 from apps.api.app.models.user import User
 from apps.api.app.models.tenant import Business
-from apps.api.app.models.access_control import Membership, Role, RolePermission, Permission, ScopedRoleAssignment
+from apps.api.app.models.access_control import Membership, Role, ScopedRoleAssignment
 from apps.api.app.services.rbac_seed_service import seed_default_roles_for_business
 
 

@@ -1,5 +1,4 @@
 import os
-import pytest
 os.environ.setdefault("DATABASE_URL", "sqlite://")
 from apps.api.app.core.db import engine, db_session
 from apps.api.app.models.base import Base

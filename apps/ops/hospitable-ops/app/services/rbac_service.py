@@ -1,7 +1,7 @@
 import uuid
 import logging
 from apps.api.app.db.session import SessionLocal, engine, Base
-from apps.api.app.models.rbac_models import Role, Permission, UserRoleAssignment, role_permissions
+from apps.api.app.models.rbac_models import Role, Permission, UserRoleAssignment
 from apps.api.app.services.audit import log_change
 
 # Ensure tables exist for the skeleton

@@ -29,6 +29,10 @@ class RegisterRequest(BaseModel):
 class RegisterResponse(BaseModel):
     id: uuid.UUID
     email: EmailStr
+    access_token: str | None = None
+    token_type: str | None = None
+    user: UserSummary | None = None
+    business_id: uuid.UUID | None = None
 
 
 
@@ -81,9 +85,10 @@ async def _load_active_memberships(
     session: AsyncSession,
     user_id: uuid.UUID,
 ) -> list[Membership]:
-    return await session.run_sync(
+    memberships = await session.run_sync(
         lambda sync_session: get_active_memberships_for_user(sync_session, user_id)
     )
+    return memberships
 
 
 def _choose_membership(
@@ -177,6 +182,7 @@ async def register(
 
     Minimal, safe implementation: rejects duplicate emails and stores a bcrypt-hashed password.
     This keeps the user model separate from employee files and preserves tenant scoping.
+    Additionally, issue an access token for immediate login in dev/UX scenarios.
     """
     existing = await session.scalar(select(User).where(User.email == payload.email))
     if existing is not None:
@@ -187,7 +193,18 @@ async def register(
     await session.commit()
     await session.refresh(user)
 
-    return RegisterResponse(id=user.id, email=user.email)
+    # Issue an access token without a chosen business; frontend will decide how to proceed.
+    access_token = create_access_token(user_id=str(user.id))
+    user_summary = UserSummary(id=user.id, email=user.email, is_active=user.is_active)
+
+    return RegisterResponse(
+        id=user.id,
+        email=user.email,
+        access_token=access_token,
+        token_type="bearer",
+        user=user_summary,
+        business_id=None,
+    )
 
 
 @router.post("/login", response_model=LoginResponse)
@@ -208,7 +225,10 @@ async def login(
             select(User).where(User.email == payload.email)
         )
 
-        if user is None or not verify_password(payload.password, user.hashed_password):
+        # DEBUG: show hashed password and verification result when running tests
+
+        valid_pw = user is not None and verify_password(payload.password, user.hashed_password)
+        if user is None or not valid_pw:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid email or password.",
@@ -248,7 +268,7 @@ async def login(
     except HTTPException:
         # Re-raise expected HTTP exceptions (401/403)
         raise
-    except Exception as exc:  # pragma: no cover - defensive
+    except Exception:  # pragma: no cover - defensive
         import logging
 
         logging.exception("Unhandled error in /auth/login")

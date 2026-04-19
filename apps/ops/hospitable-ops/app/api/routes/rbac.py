@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from apps.api.app.core.rbac import create_role, ROLES
+from apps.api.app.core.rbac import create_role
 
 router = APIRouter()
 
