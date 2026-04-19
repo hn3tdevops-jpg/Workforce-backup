@@ -73,3 +73,23 @@ poetry run pytest tests/ -v
 ## HN3T Master Plan
 
 The canonical project roadmap lives in [HN3T_MASTER_PLAN.md](./HN3T_MASTER_PLAN.md). Note: HN3T_MASTER_PLAN.md is the canonical roadmap; MASTER_PLAN.md is kept only for backward-compatibility.
+
+## Developer test setup (venv)
+
+If running tests without Poetry, use a virtualenv and install the package in editable mode plus test deps:
+
+```bash
+python -m venv venv
+source venv/bin/activate
+pip install --upgrade pip setuptools wheel
+pip install -e . --no-deps   # install this package in editable mode
+pip install pytest pytest-asyncio anyio pydantic-settings 'pydantic[email]' bcrypt==3.2.0 aiosqlite alembic fastapi uvicorn sqlalchemy python-jose passlib httpx asyncpg
+# Note: asgi2wsgi>=0.4.0 may be required by some workflows; if needed, install it separately:
+# pip install asgi2wsgi
+pytest -q
+```
+
+Notes:
+- pydantic-settings and email-validator may be required for tests.
+- bcrypt is pinned to 3.2.0 for compatibility.
+- If pip reports missing extra packages, install them as shown above.
