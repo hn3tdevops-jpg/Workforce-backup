@@ -3,7 +3,6 @@ import uuid
 import pytest
 
 from app.api.dependencies import require_permission_with_location, AuthContext
-import app.services.rbac_service as rbac_service
 
 
 class DummySession:

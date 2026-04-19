@@ -229,7 +229,6 @@ def test_timecards_rollup(client, setup_data):
 def test_admin_correction_entry(client, setup_data, db_factory):
     """PATCH /tenant/{biz}/timeclock/{entry_id} updates status and writes audit."""
     from apps.api.app.models.timeclock import TimeEntry, TimeEntryStatus
-    from sqlalchemy import select
 
     biz = setup_data["biz_id"]
 
