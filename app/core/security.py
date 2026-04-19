@@ -1,2 +1,2 @@
 # Re-export security helpers from canonical location
-from apps.api.app.core.security import *
+from apps.api.app.core.security import *  # noqa: F403

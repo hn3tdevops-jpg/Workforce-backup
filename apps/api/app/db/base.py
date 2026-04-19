@@ -2,11 +2,11 @@
 # Prefer importing the canonical package path `apps.api.app` to avoid duplicate
 # SQLAlchemy MetaData registrations when `app` alias modules exist.
 try:
-    from apps.api.app.models.base import Base  # type: ignore
+    from apps.api.app.models.base import Base  # type: ignore  # noqa: F401
     _use_app_pkg = False
 except Exception:
     # Fallback for legacy tests that rely on top-level `app` package name
-    from app.models.base import Base  # type: ignore
+    from app.models.base import Base  # type: ignore  # noqa: F401
     _use_app_pkg = True
 
 

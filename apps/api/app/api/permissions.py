@@ -1,5 +1,4 @@
 from app.api.dependencies import (
-    require_permission,
     require_permission_with_location,
     resolve_location_from_query,
 )

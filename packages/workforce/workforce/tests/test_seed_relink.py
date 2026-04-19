@@ -12,7 +12,6 @@ if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
 # Import app models and helper to ensure models are registered
-import apps.api.app.db.base as db_base
 from apps.api.app.cli.ensure_business_membership import ensure_business_membership
 from apps.api.app.models.user import User
 from apps.api.app.models.tenant import Business

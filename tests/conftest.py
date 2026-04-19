@@ -1,5 +1,3 @@
-import sys
-import pathlib
 
 # Use the canonical package namespace for tests. Ensure packages/workforce models
 # are not auto-inserted into apps.api.app.__path__ during pytest collection which
@@ -10,12 +8,11 @@ os.environ.setdefault("SKIP_WORKFORCE_MODELS", "1")
 
 # Always import apps.api.app so models are registered under a single package name
 # and avoid duplicate MetaData.
-import apps.api.app  # ensure package is importable
 _using_installed_pkg = True
 
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.pool import StaticPool
 
 from apps.api.app.db.base import Base, import_models

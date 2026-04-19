@@ -142,7 +142,6 @@ async def seed_silver_sands(
 
 
 async def _main() -> None:
-    import os
     from apps.api.app.core.config import get_settings
     logging.basicConfig(level=logging.INFO)
     settings = get_settings()

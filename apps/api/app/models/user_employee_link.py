@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, ForeignKey, Index, String, func, text, UniqueConstraint
+from sqlalchemy import Boolean, ForeignKey, Index, func, text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 try:

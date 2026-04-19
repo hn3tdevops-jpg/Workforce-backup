@@ -268,7 +268,7 @@ async def login(
     except HTTPException:
         # Re-raise expected HTTP exceptions (401/403)
         raise
-    except Exception as exc:  # pragma: no cover - defensive
+    except Exception:  # pragma: no cover - defensive
         import logging
 
         logging.exception("Unhandled error in /auth/login")

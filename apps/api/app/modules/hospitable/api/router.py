@@ -492,7 +492,7 @@ async def housekeeping_board(
     db: AsyncSession = Depends(get_async_session),
 ):
     from sqlalchemy import select
-    from apps.api.app.modules.hospitable.models.property_ops import HKTask, HKRoom
+    from apps.api.app.modules.hospitable.models.property_ops import HKTask
     from sqlalchemy.orm import selectinload
 
     result = await db.execute(
@@ -531,7 +531,7 @@ async def maintenance_board(
     db: AsyncSession = Depends(get_async_session),
 ):
     from sqlalchemy import select
-    from apps.api.app.modules.hospitable.models.property_ops import MaintenanceIssue, HKRoom
+    from apps.api.app.modules.hospitable.models.property_ops import MaintenanceIssue
     from sqlalchemy.orm import selectinload
 
     result = await db.execute(

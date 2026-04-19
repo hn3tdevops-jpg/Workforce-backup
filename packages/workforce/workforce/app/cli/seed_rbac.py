@@ -4,7 +4,6 @@ Run with: python -m app.cli.seed_rbac
 """
 
 from apps.api.app.core.db import db_session
-from datetime import datetime
 import sqlalchemy as sa
 
 # fallback imports if packages are modules

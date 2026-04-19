@@ -1,2 +1,2 @@
 # Re-export DB session helpers
-from apps.api.app.db.session import *
+from apps.api.app.db.session import *  # noqa: F403

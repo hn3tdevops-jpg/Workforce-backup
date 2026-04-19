@@ -1,2 +1,2 @@
 # Re-export permissions helpers from canonical package
-from apps.api.app.api.permissions import *
+from apps.api.app.api.permissions import *  # noqa: F403

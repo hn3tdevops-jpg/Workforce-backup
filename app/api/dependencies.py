@@ -11,4 +11,4 @@ sys.modules['apps.api.app.api.dependencies'] = canonical
 sys.modules['app.api.dependencies'] = canonical
 
 # Expose the canonical module's public names for compatibility
-from apps.api.app.api.dependencies import *  # noqa: F401
+from apps.api.app.api.dependencies import *  # noqa: F401,F403,E402

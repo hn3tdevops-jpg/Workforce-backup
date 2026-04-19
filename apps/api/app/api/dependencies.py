@@ -3,11 +3,9 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass
 from typing import Callable, Any
+import logging
 
 from fastapi import Depends, HTTPException, status
-import logging
-logger = logging.getLogger(__name__)
-
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError
 from sqlalchemy import select
@@ -17,6 +15,8 @@ from apps.api.app.core.security import decode_access_token
 from apps.api.app.db.session import get_async_session
 from apps.api.app.models.user import User
 from apps.api.app.services.rbac_service import user_has_permission
+
+logger = logging.getLogger(__name__)
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -95,7 +95,9 @@ async def get_current_auth_context(
     )
 
 
-from fastapi import Query
+from fastapi import Query  # noqa: E402
+
+# Query import appears after other code intentionally; keep at top for linters
 
 def resolve_location_from_query(location_id: str | None = Query(None)) -> uuid.UUID | None:
     """Resolve a location_id from query parameters and return a UUID or None.
