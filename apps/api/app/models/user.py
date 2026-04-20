@@ -1,22 +1,14 @@
-import uuid
-from datetime import datetime
+import os
 
-from sqlalchemy import Boolean, DateTime, String, func, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+if not os.environ.get('SKIP_WORKFORCE_MODELS'):
+    try:
+        from packages.workforce.workforce.app.models.identity import User  # noqa: F401
+        __all__ = ["User"]
+        _IMPORTED_CANONICAL = True
+    except Exception:
+        _IMPORTED_CANONICAL = False
+else:
+    _IMPORTED_CANONICAL = False
 
-from apps.api.app.models.base import Base, UUIDMixin, TimestampMixin
-
-
-class User(UUIDMixin, TimestampMixin, Base):
-    __tablename__ = "users"
-
-    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
-    hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    import uuid
-    business_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("businesses.id", ondelete="CASCADE"), nullable=True)
-
-    memberships: Mapped[list["Membership"]] = relationship("Membership", back_populates="user")
-
-
-__all__ = ["User"]
+if not _IMPORTED_CANONICAL:
+    from .user_local import *  # noqa: F401,F403
