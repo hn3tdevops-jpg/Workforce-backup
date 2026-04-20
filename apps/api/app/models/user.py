@@ -9,7 +9,6 @@ from apps.api.app.models.base import Base, UUIDMixin, TimestampMixin
 
 class User(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "users"
-    __table_args__ = {"extend_existing": True}
 
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
