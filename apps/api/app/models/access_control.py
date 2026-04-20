@@ -21,6 +21,7 @@ class Membership(Base):
         UniqueConstraint("user_id", "business_id", name="uq_memberships_user_business"),
         Index("ix_memberships_user_id", "user_id"),
         Index("ix_memberships_business_id", "business_id"),
+        {"extend_existing": True},
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -49,6 +50,7 @@ class Role(Base):
     __table_args__ = (
         UniqueConstraint("business_id", "name", name="uq_roles_business_name"),
         Index("ix_roles_business_id", "business_id"),
+        {"extend_existing": True},
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -72,6 +74,7 @@ class Permission(Base):
     __tablename__ = "permissions"
     __table_args__ = (
         UniqueConstraint("code", name="uq_permissions_code"),
+        {"extend_existing": True},
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -89,6 +92,7 @@ class RolePermission(Base):
     __tablename__ = "role_permissions"
     __table_args__ = (
         PrimaryKeyConstraint("role_id", "permission_id", name="pk_role_permissions"),
+        {"extend_existing": True},
     )
 
     role_id: Mapped[uuid.UUID] = mapped_column(
@@ -110,6 +114,7 @@ class ScopedRoleAssignment(Base):
         Index("ix_scoped_role_assignments_membership_id", "membership_id"),
         Index("ix_scoped_role_assignments_role_id", "role_id"),
         Index("ix_scoped_role_assignments_location_id", "location_id"),
+        {"extend_existing": True},
     )
 
     id: Mapped[uuid.UUID] = mapped_column(

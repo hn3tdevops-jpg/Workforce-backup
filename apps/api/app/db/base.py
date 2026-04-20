@@ -11,6 +11,24 @@ except Exception:
 
 
 def import_core_models() -> None:
+    """Import core model modules, preferring canonical packages.workforce when available.
+
+    This ensures SQLAlchemy metadata is populated from the canonical model
+    implementations and avoids duplicate Table registrations from duplicate
+    model definitions.
+    """
+    # Try canonical packaged models first
+    try:
+        # import canonical identity/business/employee models
+        import importlib
+        importlib.import_module('packages.workforce.workforce.app.models.identity')
+        importlib.import_module('packages.workforce.workforce.app.models.business')
+        importlib.import_module('packages.workforce.workforce.app.models.employee')
+        return
+    except Exception:
+        # Fall back to local app package models
+        pass
+
     if _use_app_pkg:
         import app.models.tenant  # noqa: F401
         import app.models.user  # noqa: F401
