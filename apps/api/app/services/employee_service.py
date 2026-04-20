@@ -6,9 +6,9 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from apps.api.app.models.employee import EmployeeProfile
-from apps.api.app.models.user import User
-from apps.api.app.models.user_employee_link import UserEmployeeLink
+from ..models.employee import EmployeeProfile
+from ..models.user import User
+from ..models.user_employee_link import UserEmployeeLink
 from apps.api.app.api.dependencies import AuthContext
 
 

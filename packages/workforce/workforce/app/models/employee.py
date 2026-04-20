@@ -39,6 +39,11 @@ class Employee(UUIDMixin, TimestampMixin, Base):
     availability_blocks: Mapped[list["AvailabilityBlock"]] = relationship(
         "AvailabilityBlock", back_populates="employee"
     )
+# Backwards compatibility: some parts of this repository reference EmployeeProfile
+# (a local apps.api.app model). Provide an alias so imports like
+# `from apps.api.app.models.employee import EmployeeProfile` succeed when the
+# packages.workforce model is discovered first.
+EmployeeProfile = Employee
 
 
 class Employment(UUIDMixin, TimestampMixin, Base):

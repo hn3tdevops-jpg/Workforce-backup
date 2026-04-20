@@ -1,2 +1,3 @@
-# Re-export user model
-from apps.api.app.models.user import *  # noqa: F403
+# Re-export user model (explicit)
+from apps.api.app.models.user import User  # noqa: F401
+__all__ = ["User"]
