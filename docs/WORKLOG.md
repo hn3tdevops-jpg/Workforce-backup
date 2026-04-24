@@ -49,3 +49,10 @@
 https://github.com/hn3tdevops-jpg/Workforce-backup/pull/14
 2026-04-24T11:15:33Z - Opened PR: Warning: 4 uncommitted changes
 https://github.com/hn3tdevops-jpg/Workforce-backup/pull/15
+
+## 2026-04-24 — Style & lint cleanup
+- Applied black, isort and autoflake to codebase; committed formatting changes.
+- Added .flake8 to suppress select false-positives and used inline noqa where runtime import ordering is required.
+- Fixed three remaining lint issues (line-length and unused var) and verified tests pass: 49 passed.
+- Pushed changes to origin/main.
+
