@@ -22,7 +22,8 @@ from apps.api.app.services.async_rbac import (
 async def test_async_rbac_permission_checks(db_session):
     # Prepare in-memory DB via fixtures
     import_core_models()
-    await db_session.run_sync(Base.metadata.create_all)
+    # Create all metadata on the underlying sync engine via run_sync
+    await db_session.run_sync(lambda session: Base.metadata.create_all(session.get_bind()))
 
     tenant = Tenant(name="Tenant A", slug="t-a")
     business = Business(name="Biz A", tenant=tenant)
