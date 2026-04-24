@@ -6,7 +6,7 @@
   },
   {
     "path": "PHASE1-TENANCY-CHECKLIST.md",
-    "title": "Phase 1 — Tenancy checklist",
+    "title": "Phase 1 \u2014 Tenancy checklist",
     "mtime": 1776231013
   },
   {
@@ -26,12 +26,12 @@
   },
   {
     "path": "README_APPLY_FIRST.md",
-    "title": "Workforce Repo Base — Apply First",
+    "title": "Workforce Repo Base \u2014 Apply First",
     "mtime": 1776231013
   },
   {
     "path": "SILVER_SANDS_INTEGRATION_PLAN.md",
-    "title": "Silver Sands → Hospitable/Workforce Integration Plan",
+    "title": "Silver Sands \u2192 Hospitable/Workforce Integration Plan",
     "mtime": 1773462143
   },
   {
@@ -57,11 +57,6 @@
   {
     "path": "docs/DOMAIN_MODEL.md",
     "title": "Domain Model",
-    "mtime": 1776231014
-  },
-  {
-    "path": "docs/MASTER_PLAN.md",
-    "title": "Workforce — Master Plan",
     "mtime": 1776231014
   },
   {
@@ -121,27 +116,27 @@
   },
   {
     "path": "docs/plans/HN3T_MASTER_PLAN.md",
-    "title": "🏗 UNIFIED WORKFORCE + HOSPITABLE OPS MASTER ARCHITECTURE",
-    "mtime": 1773462145
-  },
-  {
-    "path": "docs/plans/MASTER_PLAN.md",
-    "title": "MASTER_PLAN.md (legacy)",
+    "title": "\ud83c\udfd7 UNIFIED WORKFORCE + HOSPITABLE OPS MASTER ARCHITECTURE",
     "mtime": 1773462145
   },
   {
     "path": "docs/rbac/RBAC_AUDIT_INDEX.md",
-    "title": "RBAC IMPLEMENTATION AUDIT — FILE INDEX",
+    "title": "RBAC IMPLEMENTATION AUDIT \u2014 FILE INDEX",
     "mtime": 1773462145
   },
   {
     "path": "docs/rbac/RBAC_CODE_SNIPPETS.md",
-    "title": "WORKFORCE RBAC — KEY CODE SNIPPETS",
+    "title": "WORKFORCE RBAC \u2014 KEY CODE SNIPPETS",
     "mtime": 1773462145
   },
   {
     "path": "docs/rbac/RBAC_IMPLEMENTATION_AUDIT.md",
     "title": "RBAC IMPLEMENTATION AUDIT REPORT",
     "mtime": 1773462145
+  },
+  {
+    "path": "docs/plans/MASTER_PLAN_DRAFT.md",
+    "title": "Master Plan \u2014 Draft",
+    "mtime": 1777029065
   }
 ]
