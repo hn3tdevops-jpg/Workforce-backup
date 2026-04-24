@@ -60,7 +60,6 @@ class AgentRunStatus(str, enum.Enum):
 
 class User(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "users"
-    __table_args__ = {'extend_existing': True}
 
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     phone: Mapped[str | None] = mapped_column(String(30), nullable=True)

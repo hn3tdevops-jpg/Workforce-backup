@@ -9,8 +9,39 @@ except Exception:
     from app.models.base import Base  # type: ignore  # noqa: F401
     _use_app_pkg = True
 
+# Ensure sqlite accepts Python uuid.UUID objects by registering an adapter early
+# This makes tests that construct model instances with uuid.UUID work with the
+# in-memory sqlite driver used by the test harness.
+try:
+    import sqlite3
+    import uuid as _uuid_module
+    sqlite3.register_adapter(_uuid_module.UUID, lambda u: str(u))
+except Exception:
+    # Not critical; if sqlite isn't available or registration fails, continue.
+    pass
+
 
 def import_core_models() -> None:
+    """Import core model modules, preferring canonical packages.workforce when available.
+
+    This ensures SQLAlchemy metadata is populated from the canonical model
+    implementations and avoids duplicate Table registrations from duplicate
+    model definitions.
+    """
+    # Try canonical packaged models first, unless the test harness requests SKIP_WORKFORCE_MODELS
+    import os
+    if not os.environ.get('SKIP_WORKFORCE_MODELS'):
+        try:
+            # import canonical identity/business/employee models
+            import importlib
+            importlib.import_module('packages.workforce.workforce.app.models.identity')
+            importlib.import_module('packages.workforce.workforce.app.models.business')
+            importlib.import_module('packages.workforce.workforce.app.models.employee')
+            return
+        except Exception:
+            # Fall back to local app package models
+            pass
+
     if _use_app_pkg:
         import app.models.tenant  # noqa: F401
         import app.models.user  # noqa: F401

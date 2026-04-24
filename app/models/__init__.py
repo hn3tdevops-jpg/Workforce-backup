@@ -1,3 +1,3 @@
 # Compatibility shim for app.models
-from . import base, user, access_control
+# Avoid eager imports here to prevent circular import during package initialization.
 __all__ = ["base", "user", "access_control"]
