@@ -34,10 +34,13 @@ if not os.environ.get('SKIP_WORKFORCE_MODELS'):
             "RolePermission",
             "MembershipRole",
             "MembershipLocationRole",
-            "ScopedRoleAssignment",
         ]
-
-        _IMPORTED_CANONICAL = True
+        if CanonicalScopedRoleAssignment is not None:
+            __all__.append("ScopedRoleAssignment")
+            _IMPORTED_CANONICAL = True
+        else:
+            # Missing ScopedRoleAssignment in canonical identity; fall back to local definitions
+            _IMPORTED_CANONICAL = False
     except Exception:
         _IMPORTED_CANONICAL = False
 else:
