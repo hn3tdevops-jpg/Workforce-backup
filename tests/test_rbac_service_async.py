@@ -2,16 +2,16 @@ import pytest
 from sqlalchemy import select
 
 from app.db.base import Base, import_core_models
-from app.models.access_control import (
+from apps.api.app.models.access_control import (
     Membership,
     Permission,
     Role,
     RolePermission,
     ScopedRoleAssignment,
 )
-from app.models.tenant import Business, Location, Tenant
-from app.models.user import User
-from app.services.async_rbac import (
+from apps.api.app.models.tenant import Business, Location, Tenant
+from apps.api.app.models.user import User
+from apps.api.app.services.async_rbac import (
     get_effective_role_names_async,
     get_effective_permission_codes_async,
     user_has_permission_async,
