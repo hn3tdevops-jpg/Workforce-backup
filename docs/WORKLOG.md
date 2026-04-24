@@ -44,3 +44,4 @@
 - Reverted intermediate manual merge attempts and restored DB from backup when recovery was safer.
 - Committed migration changes locally; push to remote deferred pending branch reconciliation and review.
 - Next: reconcile branch with remote, push changes, run CI, and publish a short MIGRATION_PLAN entry in docs.
+2026-04-24T11:11:05Z - Added master plan draft (docs/plans/MASTER_PLAN_DRAFT.md) on branch master-plan-draft
