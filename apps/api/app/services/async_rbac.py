@@ -4,7 +4,7 @@ import uuid
 from sqlalchemy import distinct, or_, select
 from typing import Any
 
-from app.models.access_control import Membership, Permission, Role, RolePermission, ScopedRoleAssignment
+from apps.api.app.models.access_control import Membership, Permission, Role, RolePermission, ScopedRoleAssignment
 
 
 async def get_effective_role_names_async(
