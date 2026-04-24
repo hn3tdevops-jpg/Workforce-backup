@@ -15,7 +15,7 @@ from apps.api.app.models.user_employee_link import UserEmployeeLink
 async def test_link_user_to_employee_happy_path(client, db_session):
     # create supporting models
     await db_session.run_sync(import_models)
-    tenant = None
+
     business = Business(name="Biz 1")
     await db_session.run_sync(lambda s: s.add(business))
     await db_session.commit()

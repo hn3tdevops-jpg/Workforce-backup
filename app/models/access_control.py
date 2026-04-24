@@ -1,4 +1,5 @@
-# Top-level access control exports — prefer canonical packaged identity models, fallback to apps local modules.
+# Top-level access control exports — prefer canonical packaged identity models.
+# Fallback to local app modules when packaged models are unavailable.
 
 try:
     from packages.workforce.workforce.app.models.identity import \

@@ -9,9 +9,9 @@ os.environ.setdefault("CORS_ALLOW_ORIGINS", "https://example.com")
 if "apps.api.app.main" in sys.modules:
     importlib.reload(sys.modules["apps.api.app.main"])
 
-from fastapi.testclient import TestClient
+from fastapi.testclient import TestClient  # noqa: E402
 
-from apps.api.app.main import app
+from apps.api.app.main import app  # noqa: E402
 
 client = TestClient(app)
 
