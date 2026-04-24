@@ -108,3 +108,27 @@ Decision:
 
 Rationale:
 SQLite does not support the same ALTER TABLE constraint operations as PostgreSQL. Batch mode avoids partial migration churn during foundation work.
+
+## MIGRATION-2026-04-24 Alembic head merge and migration reconciliation
+Date: 2026-04-24
+Status: recorded
+
+Decision:
+- Unify divergent Alembic heads by adding a no-op merge revision to stabilize the migration graph in repository history.
+- Record missing/stub migrations only when necessary to reconcile dev DB state; prefer explicit, audited revisions.
+
+Actions taken:
+- Removed optional dependency 'asgi2wsgi' from pyproject.toml and regenerated poetry.lock to fix dependency resolution.
+- Installed dependencies via Poetry and ran tests locally: 49 passed.
+- Created alembic/versions/merge_0002_20260420_proper.py to merge 0002_normalize_uuid_columns and 20260420_consolidate_models.
+- Backed up and rebuilt the local SQLite dev DB from migrations and stamped it at the merge head.
+- Reverted intermediate automated merge attempts and restored DB from backup when recovery was safer.
+- Committed migration changes locally and pushed to origin after reconciling branch history.
+
+Rationale:
+- Multiple heads in the migration graph cause Alembic upgrade failures and deployment instability. A documented merge revision records intent and allows linear upgrades.
+
+Follow-ups:
+- Publish a detailed MIGRATION_PLAN in docs describing canonical model consolidation and any required data backfills.
+- After CI verification, open a PR and merge; then remove transient *_local modules with targeted migrations.
+- Keep migrations additive and reversible; avoid destructive changes without staging verification.

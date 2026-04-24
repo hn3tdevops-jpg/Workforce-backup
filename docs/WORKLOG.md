@@ -35,3 +35,12 @@
 - Ran full test suite: 49 passed.
 - Committed code changes that prepare for removing duplicates and Alembic migration planning.
 - Next: prepare Alembic migration plan and, after verification, remove the *_local modules one-by-one.
+
+## 2026-04-24 — Migration reconciliation and test run
+- Removed optional asgi2wsgi from pyproject.toml and regenerated poetry.lock to fix dependency resolution.
+- Installed dependencies via Poetry and ran tests locally: 49 passed.
+- Created a proper Alembic merge migration (alembic/versions/merge_0002_20260420_proper.py) to unify divergent migration heads.
+- Backed up and rebuilt local SQLite DB from migrations; stamped DB at the merge head.
+- Reverted intermediate manual merge attempts and restored DB from backup when recovery was safer.
+- Committed migration changes locally; push to remote deferred pending branch reconciliation and review.
+- Next: reconcile branch with remote, push changes, run CI, and publish a short MIGRATION_PLAN entry in docs.
