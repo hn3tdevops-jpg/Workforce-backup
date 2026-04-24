@@ -6,10 +6,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from apps.api.app.core.security import hash_password
-from apps.api.app.models.access_control import Membership, Role, ScopedRoleAssignment
+from apps.api.app.models.access_control import (Membership, Role,
+                                                ScopedRoleAssignment)
 from apps.api.app.models.tenant import Business, Location, Tenant
 from apps.api.app.models.user import User
-from apps.api.app.services.rbac_seed_service import async_seed_default_roles_for_business
+from apps.api.app.services.rbac_seed_service import \
+    async_seed_default_roles_for_business
 
 
 async def seed_user(
@@ -20,9 +22,15 @@ async def seed_user(
     with_membership: bool = True,
     with_owner_assignment: bool = True,
 ) -> tuple[User, Business]:
-    tenant = Tenant(id=uuid.uuid4(), name="Tenant 1", slug=f"tenant-{uuid.uuid4().hex[:8]}")
-    business = Business(id=uuid.uuid4(), tenant_id=tenant.id, name="Business 1")
-    location = Location(id=uuid.uuid4(), business_id=business.id, name="Location A")
+    tenant = Tenant(
+        id=uuid.uuid4(), name="Tenant 1", slug=f"tenant-{uuid.uuid4().hex[:8]}"
+    )
+    business = Business(
+        id=uuid.uuid4(), tenant_id=tenant.id, name="Business 1"
+    )
+    location = Location(
+        id=uuid.uuid4(), business_id=business.id, name="Location A"
+    )
     user = User(
         id=uuid.uuid4(),
         email=f"user-{uuid.uuid4().hex[:8]}@example.com",
@@ -32,7 +40,9 @@ async def seed_user(
     )
 
     # Use run_sync so all writes happen on the same underlying SyncSession
-    await db_session.run_sync(lambda sync: sync.add_all([tenant, business, location, user]))
+    await db_session.run_sync(
+        lambda sync: sync.add_all([tenant, business, location, user])
+    )
     await db_session.run_sync(lambda sync: sync.flush())
 
     if with_membership:
@@ -47,21 +57,25 @@ async def seed_user(
         await db_session.run_sync(lambda sync: sync.flush())
 
         if with_owner_assignment:
-            await async_seed_default_roles_for_business(db_session, business.id)
+            await async_seed_default_roles_for_business(
+                db_session, business.id
+            )
             owner_role = await db_session.scalar(
                 select(Role).where(
                     Role.business_id == business.id,
                     Role.name == "Owner",
                 )
             )
-            await db_session.run_sync(lambda sync: sync.add(
-                ScopedRoleAssignment(
-                    id=uuid.uuid4(),
-                    membership_id=membership.id,
-                    role_id=owner_role.id,
-                    location_id=None,
+            await db_session.run_sync(
+                lambda sync: sync.add(
+                    ScopedRoleAssignment(
+                        id=uuid.uuid4(),
+                        membership_id=membership.id,
+                        role_id=owner_role.id,
+                        location_id=None,
+                    )
                 )
-            ))
+            )
 
     await db_session.run_sync(lambda sync: sync.commit())
     return user, business
@@ -90,7 +104,11 @@ async def add_second_business_membership(
         is_owner=True,
     )
 
-    await db_session.run_sync(lambda sync: sync.add_all([second_business, second_location, second_membership]))
+    await db_session.run_sync(
+        lambda sync: sync.add_all(
+            [second_business, second_location, second_membership]
+        )
+    )
     await db_session.run_sync(lambda sync: sync.flush())
 
     await async_seed_default_roles_for_business(db_session, second_business.id)
@@ -100,30 +118,44 @@ async def add_second_business_membership(
             Role.name == "Owner",
         )
     )
-    await db_session.run_sync(lambda sync: sync.add(
-        ScopedRoleAssignment(
-            id=uuid.uuid4(),
-            membership_id=second_membership.id,
-            role_id=owner_role.id,
-            location_id=None,
+    await db_session.run_sync(
+        lambda sync: sync.add(
+            ScopedRoleAssignment(
+                id=uuid.uuid4(),
+                membership_id=second_membership.id,
+                role_id=owner_role.id,
+                location_id=None,
+            )
         )
-    ))
+    )
 
     await db_session.run_sync(lambda sync: sync.commit())
     return second_business
 
 
 async def create_unrelated_business(db_session: AsyncSession) -> Business:
-    tenant = Tenant(id=uuid.uuid4(), name="Other Tenant", slug=f"tenant-{uuid.uuid4().hex[:8]}")
-    business = Business(id=uuid.uuid4(), tenant_id=tenant.id, name="Other Business")
-    location = Location(id=uuid.uuid4(), business_id=business.id, name="Other Location")
-    await db_session.run_sync(lambda sync: sync.add_all([tenant, business, location]))
+    tenant = Tenant(
+        id=uuid.uuid4(),
+        name="Other Tenant",
+        slug=f"tenant-{uuid.uuid4().hex[:8]}",
+    )
+    business = Business(
+        id=uuid.uuid4(), tenant_id=tenant.id, name="Other Business"
+    )
+    location = Location(
+        id=uuid.uuid4(), business_id=business.id, name="Other Location"
+    )
+    await db_session.run_sync(
+        lambda sync: sync.add_all([tenant, business, location])
+    )
     await db_session.run_sync(lambda sync: sync.commit())
     return business
 
 
 @pytest.mark.asyncio
-async def test_login_succeeds_with_valid_credentials(client: AsyncClient, db_session: AsyncSession) -> None:
+async def test_login_succeeds_with_valid_credentials(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
     user, business = await seed_user(db_session)
 
     response = await client.post(
@@ -143,7 +175,9 @@ async def test_login_succeeds_with_valid_credentials(client: AsyncClient, db_ses
 
 
 @pytest.mark.asyncio
-async def test_login_fails_with_wrong_password(client: AsyncClient, db_session: AsyncSession) -> None:
+async def test_login_fails_with_wrong_password(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
     user, _business = await seed_user(db_session)
 
     response = await client.post(
@@ -159,7 +193,9 @@ async def test_login_fails_with_wrong_password(client: AsyncClient, db_session: 
 
 
 @pytest.mark.asyncio
-async def test_login_fails_for_inactive_user(client: AsyncClient, db_session: AsyncSession) -> None:
+async def test_login_fails_for_inactive_user(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
     user, _business = await seed_user(db_session, is_active=False)
 
     response = await client.post(
@@ -182,7 +218,9 @@ async def test_me_requires_authentication(client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_me_returns_user_roles_and_permissions(client: AsyncClient, db_session: AsyncSession) -> None:
+async def test_me_returns_user_roles_and_permissions(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
     user, business = await seed_user(db_session)
 
     login_response = await client.post(
@@ -216,7 +254,9 @@ async def test_me_returns_user_roles_and_permissions(client: AsyncClient, db_ses
 
 
 @pytest.mark.asyncio
-async def test_switch_business_requires_authentication(client: AsyncClient) -> None:
+async def test_switch_business_requires_authentication(
+    client: AsyncClient,
+) -> None:
     response = await client.post(
         "/api/v1/auth/switch-business",
         json={"business_id": str(uuid.uuid4())},
@@ -231,7 +271,9 @@ async def test_switch_business_succeeds_for_active_membership(
     db_session: AsyncSession,
 ) -> None:
     user, business1 = await seed_user(db_session)
-    business2 = await add_second_business_membership(db_session, user, business1)
+    business2 = await add_second_business_membership(
+        db_session, user, business1
+    )
 
     login_response = await client.post(
         "/api/v1/auth/login",
@@ -295,12 +337,17 @@ async def test_switch_business_forbidden_without_membership(
         headers={"Authorization": f"Bearer {token}"},
     )
     assert switch_response.status_code == 403
-    assert switch_response.json()["detail"] == "User does not have access to that business."
+    assert (
+        switch_response.json()["detail"]
+        == "User does not have access to that business."
+    )
 
 
 # --- New tests for /auth/register ---
 @pytest.mark.asyncio
-async def test_register_creates_user(client: AsyncClient, db_session: AsyncSession) -> None:
+async def test_register_creates_user(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
     email = f"reg-{uuid.uuid4().hex[:8]}@example.com"
     response = await client.post(
         "/api/v1/auth/register",

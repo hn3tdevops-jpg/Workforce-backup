@@ -9,11 +9,20 @@ from app.models.user import User
 
 
 @pytest.mark.asyncio
-async def test_create_user(client: AsyncClient, db_session: AsyncSession) -> None:
+async def test_create_user(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
     email = f"ui-{uuid.uuid4().hex[:8]}@example.com"
     resp = await client.post(
         "/api/v1/users/",
-        json={"email": email, "first_name": "Test", "last_name": "User", "phone": "+123", "job_title": "Tester", "is_active": True},
+        json={
+            "email": email,
+            "first_name": "Test",
+            "last_name": "User",
+            "phone": "+123",
+            "job_title": "Tester",
+            "is_active": True,
+        },
     )
     assert resp.status_code == 201, resp.text
     data = resp.json()

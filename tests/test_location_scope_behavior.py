@@ -2,20 +2,27 @@ import uuid
 
 import pytest
 from httpx import AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import create_access_token
-from app.models.access_control import Membership, ScopedRoleAssignment, Role
+from app.models.access_control import Membership, Role, ScopedRoleAssignment
 from app.models.tenant import Business, Location, Tenant
 from app.models.user import User
-from app.services.rbac_seed_service import async_seed_default_roles_for_business
+from app.services.rbac_seed_service import \
+    async_seed_default_roles_for_business
 
 
 async def setup_user(db_session: AsyncSession):
-    tenant = Tenant(id=uuid.uuid4(), name="Tenant X", slug=f"tenant-{uuid.uuid4().hex[:8]}")
-    business = Business(id=uuid.uuid4(), tenant_id=tenant.id, name="Business X")
-    location = Location(id=uuid.uuid4(), business_id=business.id, name="Location X")
+    tenant = Tenant(
+        id=uuid.uuid4(), name="Tenant X", slug=f"tenant-{uuid.uuid4().hex[:8]}"
+    )
+    business = Business(
+        id=uuid.uuid4(), tenant_id=tenant.id, name="Business X"
+    )
+    location = Location(
+        id=uuid.uuid4(), business_id=business.id, name="Location X"
+    )
     user = User(
         id=uuid.uuid4(),
         email=f"user-{uuid.uuid4().hex[:8]}@example.com",
@@ -42,17 +49,23 @@ async def setup_user(db_session: AsyncSession):
 
     await db_session.commit()
 
-    token = create_access_token(user_id=str(user.id), business_id=str(business.id))
+    token = create_access_token(
+        user_id=str(user.id), business_id=str(business.id)
+    )
     return token, business, location, membership
 
 
 @pytest.mark.asyncio
-async def test_allows_user_with_location_scoped_role(client: AsyncClient, db_session: AsyncSession) -> None:
+async def test_allows_user_with_location_scoped_role(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
     token, business, location, membership = await setup_user(db_session)
 
     # Find the Owner role (created by seeding) to attach at a location
     owner_role = await db_session.scalar(
-        select(Role).where(Role.business_id == business.id, Role.name == "Owner")
+        select(Role).where(
+            Role.business_id == business.id, Role.name == "Owner"
+        )
     )
 
     db_session.add(
@@ -73,15 +86,21 @@ async def test_allows_user_with_location_scoped_role(client: AsyncClient, db_ses
 
 
 @pytest.mark.asyncio
-async def test_forbids_user_without_matching_location(client: AsyncClient, db_session: AsyncSession) -> None:
+async def test_forbids_user_without_matching_location(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
     token, business, location, membership = await setup_user(db_session)
 
     owner_role = await db_session.scalar(
-        select(Role).where(Role.business_id == business.id, Role.name == "Owner")
+        select(Role).where(
+            Role.business_id == business.id, Role.name == "Owner"
+        )
     )
 
     # Assign owner role to a different location
-    other_location = Location(id=uuid.uuid4(), business_id=business.id, name="Other")
+    other_location = Location(
+        id=uuid.uuid4(), business_id=business.id, name="Other"
+    )
     db_session.add(other_location)
     await db_session.flush()
 

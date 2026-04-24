@@ -1,9 +1,9 @@
-
 # Use the canonical package namespace for tests. Ensure packages/workforce models
 # are not auto-inserted into apps.api.app.__path__ during pytest collection which
 # can cause duplicate SQLAlchemy Table registration. Set an env var that the
 # apps.api.app.models package honors to skip the optional path-extension.
 import os
+
 os.environ.setdefault("SKIP_WORKFORCE_MODELS", "1")
 
 # Always import apps.api.app so models are registered under a single package name
@@ -22,6 +22,7 @@ from apps.api.app.db.base import Base, import_models
 import_models()
 
 from apps.api.app.db.session import get_async_session
+
 # Import the FastAPI app lazily inside the client fixture so tests control when models
 # are imported/registered and avoid duplicate SQLAlchemy table definitions.
 # from app.main import app
@@ -79,7 +80,10 @@ async def db_session(db_connection):
     """
     conn = db_connection
     from sqlalchemy.orm import Session as SyncSession
-    sync_session = SyncSession(bind=conn.sync_connection, expire_on_commit=False)
+
+    sync_session = SyncSession(
+        bind=conn.sync_connection, expire_on_commit=False
+    )
 
     # Create a small adapter that exposes async-compatible methods delegating
     # to the SyncSession via greenlet_spawn so application code can await them.
@@ -122,6 +126,9 @@ async def db_session(db_connection):
         async def close(self):
             return await greenlet_spawn(self._sync.close)
 
+        async def delete(self, obj):
+            return await greenlet_spawn(lambda: self._sync.delete(obj))
+
         async def refresh(self, obj):
             try:
                 return await greenlet_spawn(lambda: self._sync.refresh(obj))
@@ -144,7 +151,6 @@ async def db_session(db_connection):
     finally:
         # Ensure the sync session is closed by the db_connection finalizer
         await adapter.close()
-
 
 
 @pytest_asyncio.fixture
@@ -193,6 +199,9 @@ async def client(db_connection):
         async def close(self):
             return await greenlet_spawn(self._sync.close)
 
+        async def delete(self, obj):
+            return await greenlet_spawn(lambda: self._sync.delete(obj))
+
         async def refresh(self, obj):
             try:
                 return await greenlet_spawn(lambda: self._sync.refresh(obj))
@@ -208,7 +217,9 @@ async def client(db_connection):
             return None
 
     async def override_get_async_session():
-        sync_session = SyncSession(bind=conn.sync_connection, expire_on_commit=False)
+        sync_session = SyncSession(
+            bind=conn.sync_connection, expire_on_commit=False
+        )
         adapter = SyncSessionAdapter(sync_session)
         try:
             async with adapter:

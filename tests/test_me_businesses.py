@@ -29,6 +29,8 @@ async def test_get_my_businesses_returns_list(client, db_session):
     assert any(item["id"] == str(business.id) for item in data)
 
     # The business in the token should be marked as default
-    found = next((item for item in data if item["id"] == str(business.id)), None)
+    found = next(
+        (item for item in data if item["id"] == str(business.id)), None
+    )
     assert found is not None
     assert found.get("is_default") is True
