@@ -18,3 +18,11 @@ __all__ = [
     "messaging",
     "hkops",
 ]
+
+# Ensure scheduling models are importable under the package name so that
+# SQLAlchemy relationships referencing 'models.scheduling.AvailabilityBlock'
+# can be resolved even when models are discovered via different import paths.
+# Importing this module is intentionally lightweight: it only imports model
+# definitions (no side-effects) and makes them available as
+# 'packages.workforce.workforce.app.models.scheduling'.
+from . import scheduling  # noqa: F401
