@@ -26,3 +26,4 @@ __all__ = [
 # definitions (no side-effects) and makes them available as
 # 'packages.workforce.workforce.app.models.scheduling'.
 from . import scheduling  # noqa: F401
+from . import identity  # noqa: F401  # ensure identity models (User, Membership) are registered

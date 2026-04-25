@@ -10,9 +10,9 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from packages.workforce.workforce.app.models.base import Base, TimestampMixin, UUIDMixin
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from apps.api.app.models.business import Location
+# Runtime import required so SQLAlchemy can resolve relationship("Location")
+# on MembershipLocationRole during mapper configuration.
+from packages.workforce.workforce.app.models.business import Location  # noqa: F401
 
 
 # ── Enums ────────────────────────────────────────────────────────────────────
@@ -68,6 +68,12 @@ class User(UUIDMixin, TimestampMixin, Base):
     status: Mapped[UserStatus] = mapped_column(
         Enum(UserStatus, name="user_status"), default=UserStatus.active, nullable=False
     )
+
+    # Backcompat property for older code that expects a boolean is_active field.
+    @property
+    def is_active(self) -> bool:
+        return self.status == UserStatus.active
+
     first_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     last_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     bio: Mapped[str | None] = mapped_column(String(500), nullable=True)
