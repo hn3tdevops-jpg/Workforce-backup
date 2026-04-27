@@ -19,8 +19,8 @@ if _HAS_CANONICAL_BUSINESS:
     # a local Tenant model that references those classes.
     import uuid
     from datetime import datetime
-    from sqlalchemy.orm import Mapped, relationship
-    from sqlalchemy import func
+    from sqlalchemy.orm import Mapped, relationship, mapped_column
+    from sqlalchemy import func, String, JSON, Boolean
 
     class Tenant(Base):
         __tablename__ = "tenants"

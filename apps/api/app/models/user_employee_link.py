@@ -1,3 +1,4 @@
+# Prefer canonical packaged UserEmployeeLink when available; fallback to local shim on import error
 import os
 
 if not os.environ.get('SKIP_WORKFORCE_MODELS'):

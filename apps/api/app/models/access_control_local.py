@@ -1,6 +1,13 @@
 import os
+from apps.api.app.core.imports import record_model_import
 
-# Prefer canonical identity models when available; fall back to local definitions.
+# Diagnostic record
+try:
+    record_model_import(__name__)
+except Exception:
+    pass
+
+# Prefer canonical identity models when available; fall back to local definitions where necessary.
 if not os.environ.get('SKIP_WORKFORCE_MODELS'):
     try:
         from packages.workforce.workforce.app.models.identity import (
@@ -24,9 +31,8 @@ if not os.environ.get('SKIP_WORKFORCE_MODELS'):
         RolePermission = CanonicalRolePermission
         MembershipRole = CanonicalMembershipRole
         MembershipLocationRole = CanonicalMembershipLocationRole
-        if CanonicalScopedRoleAssignment is not None:
-            ScopedRoleAssignment = CanonicalScopedRoleAssignment
 
+        # Prepare __all__ for the canonical exports; ScopedRoleAssignment may be added below.
         __all__ = [
             "Membership",
             "Role",
@@ -34,9 +40,12 @@ if not os.environ.get('SKIP_WORKFORCE_MODELS'):
             "RolePermission",
             "MembershipRole",
             "MembershipLocationRole",
-            "ScopedRoleAssignment",
         ]
+        if CanonicalScopedRoleAssignment is not None:
+            ScopedRoleAssignment = CanonicalScopedRoleAssignment
+            __all__.append("ScopedRoleAssignment")
 
+        # Canonical import succeeded; only provide local fallbacks for missing pieces.
         _IMPORTED_CANONICAL = True
     except Exception:
         _IMPORTED_CANONICAL = False
@@ -181,3 +190,53 @@ if not _IMPORTED_CANONICAL:
         "RolePermission",
         "ScopedRoleAssignment",
     ]
+
+# If canonical package is present but does not provide ScopedRoleAssignment,
+# define a minimal local ScopedRoleAssignment that reuses the canonical
+# Membership/Role/Location classes where available.
+if 'ScopedRoleAssignment' not in globals():
+    import uuid
+    from datetime import datetime
+
+    from sqlalchemy import Boolean, ForeignKey, Index, String, Text, func, text
+    from sqlalchemy.orm import Mapped, mapped_column, relationship
+    from apps.api.app.models.base import Base
+
+
+    def _sqlite_uuid_server_default():
+        return text(
+            "(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || "
+            "substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || "
+            "substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"
+        )
+
+
+    class ScopedRoleAssignment(Base):
+        __tablename__ = "scoped_role_assignments"
+        __table_args__ = (
+            Index("ix_scoped_role_assignments_membership_id", "membership_id"),
+            Index("ix_scoped_role_assignments_role_id", "role_id"),
+            Index("ix_scoped_role_assignments_location_id", "location_id"),
+        )
+
+        id: Mapped[uuid.UUID] = mapped_column(
+            primary_key=True,
+            default=uuid.uuid4,
+            server_default=_sqlite_uuid_server_default(),
+        )
+        membership_id: Mapped[uuid.UUID] = mapped_column(
+            ForeignKey("memberships.id", ondelete="CASCADE"), nullable=False,
+        )
+        role_id: Mapped[uuid.UUID] = mapped_column(
+            ForeignKey("roles.id", ondelete="CASCADE"), nullable=False,
+        )
+        location_id: Mapped[uuid.UUID | None] = mapped_column(
+            ForeignKey("locations.id", ondelete="CASCADE"), nullable=True,
+        )
+        created_at: Mapped[datetime | None] = mapped_column(server_default=func.now())
+
+        membership = relationship("Membership")
+        role = relationship("Role")
+        location = relationship("Location")
+
+    __all__ = globals().get("__all__", []) + ["ScopedRoleAssignment"]
