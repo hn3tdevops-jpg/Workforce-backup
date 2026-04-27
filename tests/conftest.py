@@ -3,8 +3,21 @@
 # can cause duplicate SQLAlchemy Table registration. Set an env var that the
 # apps.api.app.models package honors to skip the optional path-extension.
 import os
+import sys
 
 os.environ.setdefault("SKIP_WORKFORCE_MODELS", "1")
+
+# Prevent accidental imports of the local packages/workforce package during test
+# collection by removing any matching entries from sys.path. This ensures tests
+# run against the local apps.api.app model implementations when SKIP_WORKFORCE_MODELS
+# is set.
+repo_root = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
+for p in list(sys.path):
+    if p and os.path.normpath(p).startswith(os.path.join(repo_root, "packages")):
+        try:
+            sys.path.remove(p)
+        except ValueError:
+            pass
 
 # Always import apps.api.app so models are registered under a single package name
 # and avoid duplicate MetaData.

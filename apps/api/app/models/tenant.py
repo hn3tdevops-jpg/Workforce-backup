@@ -1,6 +1,7 @@
+# Try to reuse canonical Business/Location; Tenant remains local when canonical present.
 import os
 
-# Try to reuse canonical Business/Location; Tenant remains local when canonical present.
+# Honor test harness opt-out: don't import packages.workforce when SKIP_WORKFORCE_MODELS is set
 if not os.environ.get('SKIP_WORKFORCE_MODELS'):
     try:
         from packages.workforce.workforce.app.models.business import Business, Location  # noqa: F401
