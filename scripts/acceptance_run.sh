@@ -7,12 +7,23 @@ set -euo pipefail
 DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 cd "$DIR"
 
+# Detect docker compose command (support both 'docker compose' and 'docker-compose')
+COMPOSE_CMD=""
+if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+  COMPOSE_CMD="docker compose"
+elif command -v docker-compose >/dev/null 2>&1; then
+  COMPOSE_CMD="docker-compose"
+else
+  echo "ERROR: neither 'docker compose' nor 'docker-compose' found. Install Docker Compose or use Docker CLI v2."
+  exit 2
+fi
+
 # Bring up test services (expects docker-compose.yml in repo root)
-docker-compose up -d --build db
+$COMPOSE_CMD up -d --build db
 
 # Wait for Postgres
 echo "Waiting for Postgres..."
-until docker-compose exec -T db pg_isready -U postgres >/dev/null 2>&1; do
+until $COMPOSE_CMD exec -T db pg_isready -U postgres >/dev/null 2>&1; do
   sleep 1
 done
 
