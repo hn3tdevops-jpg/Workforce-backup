@@ -168,5 +168,103 @@ Expect: 200 and JSON containing memberships array with the seeded business and s
 
 6) Cleanup (optional): remove test tenant/business/membership rows if using a shared DB.
 
+Automated acceptance runner
+
+Run locally (fast acceptance run against ephemeral DB):
+
+# start a test DB and run migrations (example using sqlite/ephemeral or a local Postgres)
+# (If using sqlite dev.db is sufficient for quick runs)
+pytest -q tests/test_users_endpoints.py::test_invite_user_creates_invited_membership -q -s
+
+# run the full acceptance test file(s)
+pytest -q tests/test_users_endpoints.py -q -s
+
+Docker-compose example for a reproducible test environment (postgres + app):
+
+# docker-compose.yml (minimal)
+# version: '3.8'
+# services:
+#   db:
+#     image: postgres:15
+#     environment:
+#       POSTGRES_USER: postgres
+#       POSTGRES_PASSWORD: postgres
+#       POSTGRES_DB: workforce_test
+#     ports:
+#       - "5432:5432"
+#   web:
+#     build: .
+#     command: uvicorn apps.api.app.main:app --host 0.0.0.0 --port 8000
+#     environment:
+#       DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/workforce_test
+#     ports:
+#       - "8000:8000"
+#     depends_on:
+#       - db
+
+Teardown helpers (SQL) — run after acceptance test to clean up test rows (example):
+
+-- Remove memberships and related role assignments for test user
+DELETE FROM scoped_role_assignments WHERE membership_id IN (SELECT id FROM memberships WHERE user_id = '<user-id>');
+DELETE FROM memberships WHERE user_id = '<user-id>' AND business_id = '22222222-2222-2222-2222-222222222222';
+DELETE FROM users WHERE id = '<user-id>' AND email LIKE 'acceptance+%';
+DELETE FROM businesses WHERE id = '22222222-2222-2222-2222-222222222222';
+DELETE FROM tenants WHERE id = '11111111-1111-1111-1111-111111111111';
+
+GitHub Actions job snippet (CI) — acceptance-tests.yml
+
+name: Acceptance Tests
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  acceptance-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: workforce_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres" --health-interval=10s --health-timeout=5s --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Wait for Postgres
+        run: |
+          until pg_isready -h localhost -p 5432 -U postgres; do sleep 1; done
+      - name: Run migrations
+        env:
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/workforce_test
+        run: |
+          # Run alembic upgrade head or equivalent migration command
+          alembic upgrade head
+      - name: Run acceptance tests
+        env:
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/workforce_test
+        run: |
+          pytest -q tests/test_users_endpoints.py -q -s
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: acceptance-results
+          path: ./test-results || .
+
 References
 - See docs/CHANGELOG.md (2026-04-27) and PR #18 for implementation details and tests.
