@@ -89,6 +89,30 @@ pip install pytest pytest-asyncio anyio pydantic-settings 'pydantic[email]' bcry
 pytest -q
 ```
 
+## Acceptance tests (CI / local)
+
+See docs/EXAMPLES.md for detailed acceptance test examples, curl commands, and SQL snippets.
+
+Local runner script
+
+A helper script is provided at ./scripts/acceptance_run.sh which will:
+- bring up a docker-compose Postgres service (requires docker-compose.yml)
+- run alembic migrations against the test DB
+- execute pytest acceptance tests
+- tear down the docker-compose services
+
+Usage:
+
+```bash
+./scripts/acceptance_run.sh
+```
+
+GitHub Actions
+
+A GitHub Actions workflow is provided at .github/workflows/acceptance-tests.yml which runs the acceptance tests on push to main and via workflow_dispatch.
+
+To enable CI, review and enable the workflow in GitHub Actions for this repository.
+
 Notes:
 - pydantic-settings and email-validator may be required for tests.
 - bcrypt is pinned to 3.2.0 for compatibility.
