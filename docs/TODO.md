@@ -9,6 +9,7 @@ Phase 0 — Foundation Freeze
 - [ ] Confirm Python runtime target
 - [ ] Confirm monorepo directory layout
 - [ ] Verify app still boots after docs-only change
+- [x] Document register vs invite behavior (2026-04-27)
 - [ ] Create `foundation-v0.1` tag
 
 ## Next
