@@ -1,8 +1,13 @@
 # Try to reuse canonical Business/Location; Tenant remains local when canonical present.
-import os
+from apps.api.app.core.imports import skip_canonical_models, record_model_import
 
-# Honor test harness opt-out: don't import packages.workforce when SKIP_WORKFORCE_MODELS is set
-if not os.environ.get('SKIP_WORKFORCE_MODELS'):
+# Diagnostic record
+try:
+    record_model_import(__name__)
+except Exception:
+    pass
+
+if not skip_canonical_models():
     try:
         from packages.workforce.workforce.app.models.business import Business, Location  # noqa: F401
         from .tenant_local import Tenant  # Tenant kept local currently

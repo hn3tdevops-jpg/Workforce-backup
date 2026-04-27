@@ -110,9 +110,10 @@ def _choose_membership(
             )
         return chosen_membership
 
-    if user.business_id is not None:
+    user_business_id = getattr(user, "business_id", None)
+    if user_business_id is not None:
         for membership in memberships:
-            if membership.business_id == user.business_id:
+            if membership.business_id == user_business_id:
                 chosen_membership = membership
                 break
 

@@ -1,5 +1,6 @@
 import os
 
+# Respect test harness opt-out for canonical packaged models
 if not os.environ.get('SKIP_WORKFORCE_MODELS'):
     try:
         # Prefer the canonical packaged Base when available so all models share the same
@@ -10,11 +11,15 @@ if not os.environ.get('SKIP_WORKFORCE_MODELS'):
             TimestampMixin,
             UUIDMixin,
         )  # type: ignore
+        _IMPORTED_CANONICAL = True
     except Exception:
         # Fall through to fallback below
         Base = None  # type: ignore
+        _IMPORTED_CANONICAL = False
+else:
+    _IMPORTED_CANONICAL = False
 
-if os.environ.get('SKIP_WORKFORCE_MODELS') or 'Base' not in globals() or getattr(globals().get('Base'), '__name__', None) is None:
+if not _IMPORTED_CANONICAL or 'Base' not in globals() or getattr(globals().get('Base'), '__name__', None) is None:
     # Fallback: define a minimal compatible Base and mixins for environments
     # where the packaged workforce is not installed or test harness requests local models.
     import uuid
@@ -44,3 +49,10 @@ if os.environ.get('SKIP_WORKFORCE_MODELS') or 'Base' not in globals() or getattr
 
     class UUIDMixin:
         id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+
+# Diagnostic: record Base.metadata identity
+try:
+    with open('/tmp/base_metadata_ids.log', 'a') as f:
+        f.write(f"{__name__} BASE_METADATA_ID {id(Base.metadata)}\n")
+except Exception:
+    pass

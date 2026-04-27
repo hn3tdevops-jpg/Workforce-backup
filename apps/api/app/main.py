@@ -22,7 +22,7 @@ except Exception:
         async def dispatch(self, request, call_next):
             return await call_next(request)
 
-from .api.router import api_router
+from .api.router import api_router, include_routers
 from .db.base import import_models  # noqa: F401
 
 # Ensure all SQLAlchemy models are registered before startup/migrations.
@@ -76,4 +76,6 @@ async def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+# Include routers into the API router (not the app) to keep the '/api/v1' prefix behaviour
+include_routers(api_router)
 app.include_router(api_router, prefix="/api/v1")

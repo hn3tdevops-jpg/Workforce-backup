@@ -54,6 +54,29 @@ async def db_engine():
         connect_args={"check_same_thread": False},
     )
 
+    # Re-import model modules and reload to ensure they are bound to the
+    # same Base/MetaData instance used by the test harness. This helps avoid
+    # hidden import-order differences between modules importing models under
+    # alternate package names.
+    import importlib
+    try:
+        import apps.api.app.models.tenant as _tenant_mod
+        import apps.api.app.models.user as _user_mod
+        import apps.api.app.models.access_control as _ac_mod
+        importlib.reload(_tenant_mod)
+        importlib.reload(_user_mod)
+        importlib.reload(_ac_mod)
+    except Exception:
+        # Best-effort; continue to metadata creation which may still succeed
+        pass
+
+    # Dump metadata table keys before create_all for diagnostics
+    try:
+        with open('/tmp/metadata_before_create.log', 'w') as f:
+            f.write('\n'.join(sorted(list(Base.metadata.tables.keys()))) + '\n')
+    except Exception:
+        pass
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 

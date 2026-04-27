@@ -40,6 +40,55 @@ class UserRead(BaseModel):
     memberships: list = []
 
 
+class InviteRequest(BaseModel):
+    email: EmailStr
+    role_ids: list[str] = []
+
+
+@router.post("/invite", status_code=201)
+async def invite_user(business_id: str, payload: InviteRequest, session: AsyncSession = Depends(get_async_session)) -> dict:
+    """Invite a user to a business. Creates a stub User (status invited) and a Membership with status invited.
+
+    Mirrors the behavior in packages.workforce tenant invite endpoint for administrative flows.
+    """
+    # Find or create user
+    target = await session.scalar(select(User).where(User.email == payload.email))
+    if not target:
+        # Create a stub user record for invite; keep account inactive until acceptance
+        target = User(email=payload.email, hashed_password="", is_active=False)
+        session.add(target)
+        await session.flush()
+
+    # Validate business exists
+    try:
+        biz_id = uuid.UUID(business_id)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid business_id")
+
+    biz = await session.scalar(select(Business).where(Business.id == biz_id))
+    if not biz:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Business not found")
+
+    existing = await session.scalar(select(Membership).where(Membership.user_id == target.id, Membership.business_id == biz.id))
+    if existing:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User already has a membership in this business")
+
+    membership = Membership(id=uuid.uuid4(), user_id=target.id, business_id=biz.id, status="invited")
+    session.add(membership)
+    await session.flush()
+
+    for role_id in payload.role_ids:
+        try:
+            from apps.api.app.models.access_control import MembershipRole
+            session.add(MembershipRole(membership_id=membership.id, role_id=role_id))
+        except Exception:
+            # If MembershipRole model is not present in this deployment, skip role attachments.
+            continue
+
+    await session.commit()
+    return {"membership_id": str(membership.id), "user_id": str(target.id), "email": target.email}
+
+
 @router.post("/", response_model=UserRead, status_code=201)
 async def create_user(payload: UserCreate, session: AsyncSession = Depends(get_async_session)) -> UserRead:
     existing = await session.scalar(select(User).where(User.email == payload.email))

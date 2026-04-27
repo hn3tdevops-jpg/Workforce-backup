@@ -47,9 +47,9 @@ initial Business, Location, and admin User:
 curl -X POST http://localhost:8000/api/v1/bootstrap \
   -H "Content-Type: application/json" \
   -d '{
-    "admin_email": "admin@example.com",
-    "admin_password": "YourSecurePassword",
-    "business_name": "My Business",
+    "admin_email": "admin@hn3t.org",
+    "admin_password": "@DM!N12345",
+    "business_name":  HN3T",
     "location_name": "HQ"
   }'
 ```
