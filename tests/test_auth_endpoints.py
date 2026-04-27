@@ -362,6 +362,18 @@ async def test_register_creates_user(
 
 
 @pytest.mark.asyncio
+async def test_register_then_login_forbidden_without_membership(client: AsyncClient) -> None:
+    # Register a new user, but do not create a business/membership
+    email = f"reg2-{uuid.uuid4().hex[:8]}@example.com"
+    resp = await client.post("/api/v1/auth/register", json={"email": email, "password": "RegPass1!"})
+    assert resp.status_code == 201, resp.text
+
+    login = await client.post("/api/v1/auth/login", json={"email": email, "password": "RegPass1!"})
+    assert login.status_code == 403
+    assert login.json()["detail"] == "User has no active memberships."
+
+
+@pytest.mark.asyncio
 async def test_register_duplicate_fails(client: AsyncClient) -> None:
     email = f"dup-{uuid.uuid4().hex[:8]}@example.com"
     resp1 = await client.post(
