@@ -56,3 +56,8 @@ https://github.com/hn3tdevops-jpg/Workforce-backup/pull/15
 - Fixed three remaining lint issues (line-length and unused var) and verified tests pass: 49 passed.
 - Pushed changes to origin/main.
 
+## 2026-04-28 — Boot-path recovery and deployment wrapper fix
+- Added `SKIP_WORKFORCE_MODELS=1` default in `apps/api/app/main.py` and `wsgi.py` so the app boots against the safe local model path instead of double-registering SQLAlchemy tables.
+- Declared the missing `a2wsgi` runtime dependency in `pyproject.toml` and `requirements.txt` so the PythonAnywhere WSGI wrapper can import cleanly.
+- Verified direct imports succeed, model registration completes, the deployment wrapper imports once `a2wsgi` is installed, and the full pytest suite passes: 52 passed.
+- Next: confirm the live deployment has the updated dependency set and then move to the Phase 0 checkpoint/tag.

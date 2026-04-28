@@ -1,6 +1,8 @@
 import os
 import sys
 
+os.environ.setdefault("SKIP_WORKFORCE_MODELS", "1")
+
 project_home = os.path.abspath(os.path.dirname(__file__))
 if project_home not in sys.path:
     sys.path.insert(0, project_home)

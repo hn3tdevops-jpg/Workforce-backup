@@ -8,7 +8,7 @@ Phase 0 — Foundation Freeze
 - [ ] Commit project-control files
 - [ ] Confirm Python runtime target
 - [ ] Confirm monorepo directory layout
-- [ ] Verify app still boots after docs-only change
+- [x] Verify app still boots after docs-only change
 - [x] Document register vs invite behavior (2026-04-27)
 - [ ] Create `foundation-v0.1` tag
 
@@ -19,6 +19,8 @@ Phase 0 — Foundation Freeze
 - [ ] Define atomic permission catalog
 - [x] Add permission-resolution helpers
 - [ ] Add audit/event tables
+- [ ] Run broader backend test suite
+- [ ] Confirm deployment entrypoint uses the updated `SKIP_WORKFORCE_MODELS=1` boot path
 
 ## Later
 - [ ] Build workforce/time core

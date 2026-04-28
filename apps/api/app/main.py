@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import os
 
+os.environ.setdefault("SKIP_WORKFORCE_MODELS", "1")
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 try:
