@@ -9,6 +9,7 @@ from app.api.dependencies import get_current_auth_context
 from app.db.session import get_async_session
 from app.models.tenant import Business
 from app.models.access_control import Membership, ScopedRoleAssignment
+from app.services.rbac_service import get_effective_permission_codes
 
 
 class BusinessSelector(BaseModel):
@@ -58,3 +59,30 @@ async def my_businesses(auth = Depends(get_current_auth_context), session: Async
         pass
 
     return list(businesses.values())
+
+
+@router.get("/effective-permissions")
+async def my_effective_permissions(
+    auth = Depends(get_current_auth_context),
+    session: AsyncSession = Depends(get_async_session),
+    business_id: str | None = None,
+    location_id: str | None = None,
+):
+    """Return the current user's effective permission codes for the active business.
+
+    `business_id` is accepted for compatibility with existing callers; when
+    provided it must match the active business in the auth context.
+    """
+    if business_id is not None and str(business_id) != str(auth.business_id):
+        from fastapi import HTTPException, status
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Business mismatch.")
+
+    permissions = await session.run_sync(
+        lambda sync_session: get_effective_permission_codes(
+            sync_session,
+            auth.user_id,
+            auth.business_id,
+            location_id,
+        )
+    )
+    return sorted(permissions)

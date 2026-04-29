@@ -29,7 +29,6 @@ def set_member_location_roles_service(
 
     Returns mapping location_id -> list of role_ids after the change.
     """
-    # Helper: check if user is a Location Owner at the given location
     def _is_location_owner(user_id: str, location_id: str) -> bool:
         if not user_id:
             return False
@@ -48,15 +47,28 @@ def set_member_location_roles_service(
         rows = db.execute(q).all()
         return len(rows) > 0
 
+    def _location_owner_rows(location_id: str, membership_id_to_skip: str | None = None):
+        q = (
+            select(MembershipLocationRole)
+            .join(BizRole, BizRole.id == MembershipLocationRole.role_id)
+            .join(Membership, Membership.id == MembershipLocationRole.membership_id)
+            .where(
+                MembershipLocationRole.location_id == location_id,
+                BizRole.name.ilike('location owner'),
+                Membership.status == MembershipStatus.active,
+            )
+        )
+        if membership_id_to_skip is not None:
+            q = q.where(MembershipLocationRole.membership_id != membership_id_to_skip)
+        return db.execute(q).scalars().all()
+
     for location_id, role_ids in assignments.items():
-        # Verify location belongs to this business
         loc = db.execute(
             select(Location).where(Location.id == location_id, Location.business_id == business_id)
         ).scalar_one_or_none()
         if not loc:
             raise ValueError(f"Location {location_id} not found in this business")
 
-        # Validate roles and collect location-scoped roles
         location_scoped_roles = []
         for role_id in role_ids:
             role = db.execute(
@@ -67,7 +79,6 @@ def set_member_location_roles_service(
             if role.scope_type == 'LOCATION':
                 location_scoped_roles.append(role)
 
-        # Check existing assignments for this member at this location
         existing_rows = db.execute(
             select(MembershipLocationRole, BizRole)
             .join(BizRole, BizRole.id == MembershipLocationRole.role_id)
@@ -79,11 +90,9 @@ def set_member_location_roles_service(
 
         existing_owner_removal_guard = False
         for mlr, role in existing_rows:
-            if role.scope_type == 'LOCATION' and role.name.lower() == 'location owner':
-                if role.id not in role_ids:
-                    existing_owner_removal_guard = True
+            if role.scope_type == 'LOCATION' and role.name.lower() == 'location owner' and role.id not in role_ids:
+                existing_owner_removal_guard = True
 
-        # Enforce delegation rules when needed
         if location_scoped_roles or existing_owner_removal_guard:
             if actor and getattr(actor, 'is_superadmin', False):
                 caller_allowed = True
@@ -95,7 +104,6 @@ def set_member_location_roles_service(
             if not caller_allowed:
                 raise PermissionError("Location-owner delegation required: missing rbac.location_roles.manage or location owner role")
 
-        # Record removed assignments for auditing
         removed_rows = db.execute(
             select(MembershipLocationRole).where(
                 MembershipLocationRole.membership_id == membership_id,
@@ -104,23 +112,11 @@ def set_member_location_roles_service(
         ).scalars().all()
         removed_role_ids = [r.role_id for r in removed_rows]
 
-        # Last-location-owner guard
         if existing_owner_removal_guard:
-            others = db.execute(
-                select(MembershipLocationRole)
-                .join(BizRole, BizRole.id == MembershipLocationRole.role_id)
-                .join(Membership, Membership.id == MembershipLocationRole.membership_id)
-                .where(
-                    MembershipLocationRole.location_id == location_id,
-                    BizRole.name.ilike('location owner'),
-                    MembershipLocationRole.membership_id != membership_id,
-                    Membership.status == MembershipStatus.active,
-                )
-            ).scalars().all()
+            others = _location_owner_rows(location_id, membership_id_to_skip=membership_id)
             if not others:
                 raise ValueError("Cannot remove last Location Owner for this location")
 
-        # Delete existing
         db.execute(
             delete(MembershipLocationRole).where(
                 MembershipLocationRole.membership_id == membership_id,
@@ -128,7 +124,6 @@ def set_member_location_roles_service(
             )
         )
 
-        # Audit removals
         if removed_role_ids:
             audit = AuditEvent(
                 business_id=business_id,
@@ -142,7 +137,6 @@ def set_member_location_roles_service(
             )
             db.add(audit)
 
-        # Add new assignments
         loc_labels = job_title_labels.get(location_id, {}) if job_title_labels else {}
         for role_id in role_ids:
             db.add(MembershipLocationRole(
@@ -153,7 +147,6 @@ def set_member_location_roles_service(
                 created_by_user_id=actor.id if actor else None,
             ))
 
-        # Audit additions
         if role_ids:
             audit = AuditEvent(
                 business_id=business_id,

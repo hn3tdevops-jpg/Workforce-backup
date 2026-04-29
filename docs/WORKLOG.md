@@ -61,3 +61,8 @@ https://github.com/hn3tdevops-jpg/Workforce-backup/pull/15
 - Declared the missing `a2wsgi` runtime dependency in `pyproject.toml` and `requirements.txt` so the PythonAnywhere WSGI wrapper can import cleanly.
 - Verified direct imports succeed, model registration completes, the deployment wrapper imports once `a2wsgi` is installed, and the full pytest suite passes: 52 passed.
 - Next: confirm the live deployment has the updated dependency set and then move to the Phase 0 checkpoint/tag.
+
+## 2026-04-28 — Backend follow-through for permissions and RBAC
+- Added `GET /api/v1/me/effective-permissions` to the real runtime route and verified it with `tests/test_me_effective_permissions.py`.
+- Strengthened the tenant service last-location-owner guard before location-role removal.
+- Verified the core slice passes: 6 tests green.
