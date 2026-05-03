@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-05-03
+### Added
+- `docs/reports/WORKFORCE_CROSS_REPO_EVALUATION_REPORT.md` — cross-repo evaluation covering workforce-backup, with placeholder sections for workforce-showcase and workforce-console (both inaccessible at time of writing).
+
 ## 2026-04-27
 ### Added
 - Centralized import guard and diagnostics to stabilize tests (SKIP_WORKFORCE_MODELS).

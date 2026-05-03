@@ -62,6 +62,12 @@ https://github.com/hn3tdevops-jpg/Workforce-backup/pull/15
 - Verified direct imports succeed, model registration completes, the deployment wrapper imports once `a2wsgi` is installed, and the full pytest suite passes: 52 passed.
 - Next: confirm the live deployment has the updated dependency set and then move to the Phase 0 checkpoint/tag.
 
+## 2026-05-03 — Cross-repo evaluation report
+- Created `docs/reports/` directory and `docs/reports/WORKFORCE_CROSS_REPO_EVALUATION_REPORT.md`.
+- workforce-showcase and workforce-console returned 404 from GitHub API; placeholder sections created for both.
+- Key findings: dual RBAC schema, CORS mismatch (render.yaml API URL not in CORS allowlist), no CI/CD, no individual REPO_EVALUATION_REPORT.md files exist yet.
+- Next: create individual REPO_EVALUATION_REPORT.md for workforce-backup; gain access to showcase and console repos.
+
 ## 2026-04-28 — Backend follow-through for permissions and RBAC
 - Added `GET /api/v1/me/effective-permissions` to the real runtime route and verified it with `tests/test_me_effective_permissions.py`.
 - Strengthened the tenant service last-location-owner guard before location-role removal.
