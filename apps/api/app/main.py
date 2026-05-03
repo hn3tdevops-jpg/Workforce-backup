@@ -40,6 +40,8 @@ def get_cors_origins() -> list[str]:
     return [
         "https://hn3t.pythonanywhere.com",
         "https://wf-hn3t.pythonanywhere.com",
+        # Render-hosted frontend (service name: hospitable-web per render.yaml)
+        "https://hospitable-web.onrender.com",
         "http://127.0.0.1:5000",
         "http://localhost:5000",
         "http://127.0.0.1:5173",

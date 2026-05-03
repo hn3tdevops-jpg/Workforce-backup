@@ -1,5 +1,10 @@
 name: CI
 
+# NOTE: This workflow is superseded by backend-ci.yml which sets the correct
+# PYTHONPATH and SKIP_WORKFORCE_MODELS environment variables required by
+# the canonical backend runtime (D-0006, D-0008). This file is kept for
+# reference but the matrix/setup mismatch has been fixed.
+
 on:
   push:
     branches: [ main, master ]
@@ -9,16 +14,24 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
     strategy:
       matrix:
-        python-version: ['3.12','3.13']
+        python-version: ['3.12', '3.13']
+
+    env:
+      PYTHONPATH: apps/api
+      SKIP_WORKFORCE_MODELS: "1"
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python 3.13
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: ${{ matrix.python-version }}
 
       - name: Install Poetry
         run: pip install poetry
@@ -29,7 +42,8 @@ jobs:
           pip install poetry
           poetry config virtualenvs.create false || true
           poetry install --no-interaction --no-ansi
+
       - name: Run tests
         run: |
-          poetry run pytest -q
+          pytest -q tests
 

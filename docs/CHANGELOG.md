@@ -3,6 +3,12 @@
 ## 2026-05-03
 ### Added
 - `docs/reports/WORKFORCE_CROSS_REPO_EVALUATION_REPORT.md` — cross-repo evaluation covering workforce-backup, with placeholder sections for workforce-showcase and workforce-console (both inaccessible at time of writing).
+- `docs/DECISIONS.md` D-0011 — canonical RBAC model decision: `roles / role_permissions / scoped_role_assignments` are the authoritative tables; `biz_roles / biz_role_permissions / membership_roles / membership_location_roles` are legacy/orphaned and not used by the runtime API.
+- `.github/workflows/backend-ci.yml` — minimal CI workflow: installs dependencies, runs `alembic upgrade head`, runs `pytest -q tests` with `PYTHONPATH=apps/api` and `SKIP_WORKFORCE_MODELS=1`.
+
+### Fixed
+- `.github/workflows/ci.yml` — corrected Python version matrix vs setup-python mismatch (was hardcoding `3.13` regardless of matrix value); added `PYTHONPATH=apps/api` and `SKIP_WORKFORCE_MODELS=1` env vars; fixed test command to `pytest -q tests`.
+- `apps/api/app/main.py` CORS allowlist — added `https://hospitable-web.onrender.com` (the Render-deployed frontend origin per `render.yaml` service name). Documented that `allow_credentials=False` is intentional: the API uses Bearer token auth (Authorization header), not cookies, so credentials mode is not required.
 
 ## 2026-04-27
 ### Added
