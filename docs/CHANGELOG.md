@@ -2,6 +2,15 @@
 
 ## 2026-05-03
 ### Added
+- `docs/reports/WORKFORCE_CROSS_REPO_EVALUATION_REPORT_2026-05-03.md` — full cross-repo evaluation covering all three repos: workforce-backup (main), Workforce-Showcase (master), Workforce-Console (docs/reconcile-backend-roots). Supersedes placeholder sections in the prior report.
+  - Exact backend route inventory and schema shapes
+  - Frontend/backend contract matrix with exact mismatches
+  - CORS/domain matrix (Showcase CORS now confirmed compatible)
+  - RBAC dual-layer assessment (session vs employment scope)
+  - CI status (Showcase CI broken: stale poetry.lock; backend 53/53 passing)
+  - `/auth/me/access-context` gap identified (only in local Node.js proxy, not Python backend)
+  - Phase 0 tag assessment and prioritized fix list
+- `docs/reports/WORKFORCE_CROSS_REPO_EVALUATION_REPORT.md` — updated with supersession notice pointing to the dated report above.
 - `docs/reports/WORKFORCE_CROSS_REPO_EVALUATION_REPORT.md` — cross-repo evaluation covering workforce-backup, with placeholder sections for workforce-showcase and workforce-console (both inaccessible at time of writing).
 - `docs/DECISIONS.md` D-0011 — canonical RBAC model decision: `roles / role_permissions / scoped_role_assignments` are the authoritative tables; `biz_roles / biz_role_permissions / membership_roles / membership_location_roles` are legacy/orphaned and not used by the runtime API.
 - `.github/workflows/backend-ci.yml` — minimal CI workflow: installs dependencies, runs `alembic upgrade head`, runs `pytest -q tests` with `PYTHONPATH=apps/api` and `SKIP_WORKFORCE_MODELS=1`.

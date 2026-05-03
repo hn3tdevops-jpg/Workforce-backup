@@ -4,6 +4,9 @@
 **Coordination repo:** `workforce-backup`  
 **Analyst:** GitHub Copilot automated evaluation
 
+> ⚠️ **SUPERSEDED** — This report contained placeholder sections for Workforce-Showcase and Workforce-Console because both repos were inaccessible at the time of writing. A full evaluation with real findings for all three repos is in:
+> **`docs/reports/WORKFORCE_CROSS_REPO_EVALUATION_REPORT_2026-05-03.md`**
+
 ---
 
 ## Repo Access Summary
