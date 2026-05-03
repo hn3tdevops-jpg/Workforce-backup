@@ -1,5 +1,10 @@
 # Worklog
 
+## 2026-05-03 — Cross-repo evaluation report restored (from PR #22 / commit 3b7187b)
+- Restored `docs/reports/WORKFORCE_CROSS_REPO_EVALUATION_REPORT_2026-05-03.md` (full evaluation of all three repos) from closed PR #22 commit 3b7187bea1599463be1a2c90d671db5e924babe3.
+- Added supersession notice to `docs/reports/WORKFORCE_CROSS_REPO_EVALUATION_REPORT.md` pointing to the dated report.
+- No source code changed.
+
 ## 2026-05-03 — Phase 0 blocker resolution (RBAC audit, CORS fix, CI fix)
 
 ### RBAC audit findings
