@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr
@@ -79,6 +80,22 @@ class MeResponse(BaseModel):
     memberships: list[MembershipSummary]
     roles: list[str]
     permissions: list[str]
+
+
+class AccessContextScope(BaseModel):
+    effective_permissions: list[str]
+    assignments: list[str]
+    link_status: str
+    employment_status: str
+    is_super_admin: bool
+
+
+class AccessContextResponse(BaseModel):
+    user_id: uuid.UUID
+    has_access: bool
+    active_scope_count: int
+    scopes: list[AccessContextScope]
+    resolved_at: str
 
 
 async def _load_active_memberships(
@@ -330,4 +347,54 @@ async def me(
         memberships=memberships,
         roles=roles,
         permissions=permissions,
+    )
+
+
+@router.get("/me/access-context", response_model=AccessContextResponse)
+async def me_access_context(
+    auth: AuthContext = Depends(get_current_auth_context),
+    session: AsyncSession = Depends(get_async_session),
+) -> AccessContextResponse:
+    """Return a COMPAT access-context scope derived from current RBAC data.
+
+    Constructs one safe scope from existing membership and RBAC data when real
+    employee-link tables are not available. A user without an active membership
+    for the token's business receives has_access=False with no scopes.
+    """
+    resolved_at = datetime.now(timezone.utc).isoformat()
+
+    memberships = await _load_active_memberships(session, auth.user_id)
+    has_active_membership = any(
+        m.business_id == auth.business_id for m in memberships
+    )
+
+    if not has_active_membership:
+        return AccessContextResponse(
+            user_id=auth.user_id,
+            has_access=False,
+            active_scope_count=0,
+            scopes=[],
+            resolved_at=resolved_at,
+        )
+
+    roles, permissions = await _load_roles_and_permissions(
+        session, auth.user_id, auth.business_id
+    )
+
+    is_super_admin = "*" in permissions or "superadmin:*" in permissions
+
+    scope = AccessContextScope(
+        effective_permissions=permissions,
+        assignments=roles,
+        link_status="COMPAT",
+        employment_status="ACTIVE",
+        is_super_admin=is_super_admin,
+    )
+
+    return AccessContextResponse(
+        user_id=auth.user_id,
+        has_access=True,
+        active_scope_count=1,
+        scopes=[scope],
+        resolved_at=resolved_at,
     )
