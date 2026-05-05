@@ -72,6 +72,49 @@ async def test_access_context_includes_effective_permissions(
 
 
 @pytest.mark.asyncio
+async def test_access_context_scope_has_employment_scope_fields(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    user, business = await seed_user(db_session)
+
+    login_response = await client.post(
+        "/api/v1/auth/login",
+        json={"email": user.email, "password": "LoginPass1!"},
+    )
+    assert login_response.status_code == 200, login_response.text
+    token = login_response.json()["access_token"]
+
+    response = await client.get(
+        "/api/v1/auth/me/access-context",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200, response.text
+    data = response.json()
+    scope = data["scopes"][0]
+
+    # EmploymentScope identity fields
+    assert "employee_profile_id" in scope
+    assert scope["employee_profile_id"].startswith("compat-ep-")
+    assert "employee_name" in scope
+    assert scope["employee_name"] == user.email
+
+    # assignments is now a list of objects, not strings
+    assert isinstance(scope["assignments"], list)
+    assert len(scope["assignments"]) > 0
+    first_assignment = scope["assignments"][0]
+    assert "id" in first_assignment
+    assert "role_name" in first_assignment
+    assert "scope_type" in first_assignment
+    assert "permissions" in first_assignment
+    assert first_assignment["scope_type"] == "BUSINESS"
+    assert isinstance(first_assignment["permissions"], list)
+
+    # effective_permissions still contains expected RBAC permissions
+    assert "hk.rooms.read" in scope["effective_permissions"]
+
+
+@pytest.mark.asyncio
 async def test_access_context_compat_scope_count_is_one(
     client: AsyncClient, db_session: AsyncSession
 ) -> None:

@@ -1,6 +1,16 @@
 # Changelog
 
 ## 2026-05-05
+### Changed
+- `AccessContextScope` expanded with full EmploymentScope-compatible fields:
+  `employee_profile_id`, `employee_name`, `employee_code`, `job_title`, `department`,
+  plus `assignments` changed from `list[str]` to `list[AccessContextAssignment]`.
+- Added `AccessContextAssignment` model (`id`, `role_name`, `scope_type`, `permissions`).
+- COMPAT scope now sets `employee_profile_id=f"compat-ep-{user_id}"`, `employee_name=user.email`,
+  and builds one `AccessContextAssignment` per resolved role carrying aggregate permissions.
+- Added `test_access_context_scope_has_employment_scope_fields` to cover new field contract;
+  59 tests pass.
+
 ### Added
 - `GET /api/v1/auth/me/access-context` endpoint in `apps/api/app/api/v1/endpoints/auth.py`.
   - Returns a COMPAT scope derived from the authenticated user's existing RBAC data

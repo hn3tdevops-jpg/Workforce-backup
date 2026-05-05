@@ -21,6 +21,8 @@ from apps.api.app.services.rbac_service import (
 
 router = APIRouter()
 
+_COMPAT_EMPLOYEE_PROFILE_PREFIX = "compat-ep-"
+_COMPAT_ROLE_ID_PREFIX = "compat-role-"
 
 class RegisterRequest(BaseModel):
     email: EmailStr
@@ -82,12 +84,24 @@ class MeResponse(BaseModel):
     permissions: list[str]
 
 
+class AccessContextAssignment(BaseModel):
+    id: str
+    role_name: str
+    scope_type: str
+    permissions: list[str]
+
+
 class AccessContextScope(BaseModel):
-    effective_permissions: list[str]
-    assignments: list[str]
-    link_status: str
+    employee_profile_id: str
+    employee_name: str
+    employee_code: str | None
+    job_title: str | None
+    department: str | None
     employment_status: str
+    assignments: list[AccessContextAssignment]
+    effective_permissions: list[str]
     is_super_admin: bool
+    link_status: str
 
 
 class AccessContextResponse(BaseModel):
@@ -384,11 +398,24 @@ async def me_access_context(
     is_super_admin = "*" in permissions or "superadmin:*" in permissions
 
     scope = AccessContextScope(
-        effective_permissions=permissions,
-        assignments=roles,
-        link_status="COMPAT",
+        employee_profile_id=f"{_COMPAT_EMPLOYEE_PROFILE_PREFIX}{auth.user_id}",
+        employee_name=auth.user.email,
+        employee_code=None,
+        job_title=None,
+        department=None,
         employment_status="ACTIVE",
+        assignments=[
+            AccessContextAssignment(
+                id=f"{_COMPAT_ROLE_ID_PREFIX}{i}",
+                role_name=role,
+                scope_type="BUSINESS",
+                permissions=permissions,
+            )
+            for i, role in enumerate(roles)
+        ],
+        effective_permissions=permissions,
         is_super_admin=is_super_admin,
+        link_status="COMPAT",
     )
 
     return AccessContextResponse(

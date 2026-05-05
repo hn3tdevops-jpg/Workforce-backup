@@ -1,5 +1,19 @@
 # Worklog
 
+## 2026-05-05 — Expand AccessContextScope to full EmploymentScope contract
+
+### Context
+PR #29 added the COMPAT scope endpoint but `AccessContextScope` was too narrow for
+`Workforce-Showcase`'s `EmploymentScope` contract. This session widens the scope shape.
+
+### Changes
+- Added `AccessContextAssignment` Pydantic model: `id`, `role_name`, `scope_type`, `permissions`.
+- Expanded `AccessContextScope` with: `employee_profile_id`, `employee_name`, `employee_code`,
+  `job_title`, `department`; changed `assignments` from `list[str]` to `list[AccessContextAssignment]`.
+- Updated `me_access_context` COMPAT builder to populate new fields from the auth context
+  and resolved RBAC data (one assignment per role, carrying aggregate permissions).
+- Added `test_access_context_scope_has_employment_scope_fields`; 59 tests pass.
+
 ## 2026-05-05 — Add GET /api/v1/auth/me/access-context endpoint
 
 ### Context
