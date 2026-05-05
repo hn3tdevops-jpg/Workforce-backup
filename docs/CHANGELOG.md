@@ -1,6 +1,17 @@
 # Changelog
 
-## 2026-05-03
+## 2026-05-05
+### Added
+- `GET /api/v1/auth/me/access-context` endpoint in `apps/api/app/api/v1/endpoints/auth.py`.
+  - Returns a COMPAT scope derived from the authenticated user's existing RBAC data
+    (`get_effective_permission_codes`, `get_effective_role_names`).
+  - Response shape: `{user_id, has_access, active_scope_count, scopes, resolved_at}`.
+  - Scope fields: `{effective_permissions, assignments, link_status, employment_status, is_super_admin}`.
+  - `has_access=False` and no scope returned when the user has no active membership for the token's `business_id`.
+  - `is_super_admin=True` only when permissions include `"*"` or `"superadmin:*"`.
+- `tests/test_auth_access_context.py` — 5 tests covering 401 (unauthenticated), 200 (active member),
+  effective_permissions presence, active_scope_count=1 for COMPAT, and no scope for missing membership.
+
 ### Added
 - `docs/reports/WORKFORCE_CROSS_REPO_EVALUATION_REPORT_2026-05-03.md` — full cross-repo evaluation covering all three repos: workforce-backup (main), Workforce-Showcase (master), Workforce-Console (docs/reconcile-backend-roots). Supersedes placeholder sections in the prior report.
   - Exact backend route inventory and schema shapes

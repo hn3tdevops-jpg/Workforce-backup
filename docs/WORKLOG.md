@@ -1,6 +1,20 @@
 # Worklog
 
-## 2026-05-03 — Cross-repo evaluation report restored (from PR #22 / commit 3b7187b)
+## 2026-05-05 — Add GET /api/v1/auth/me/access-context endpoint
+
+### Context
+The PythonAnywhere production frontend (`Workforce-Showcase`) calls the Python backend
+directly at `https://hn3t.pythonanywhere.com/api/v1`. PR #28 fixed the local dev proxy
+but not the production backend. This adds the missing Python endpoint.
+
+### Changes
+- Added `AccessContextScope` and `AccessContextResponse` Pydantic models to `auth.py`.
+- Added `GET /api/v1/auth/me/access-context` that returns a COMPAT scope built from
+  the user's current RBAC data (`get_effective_role_names`, `get_effective_permission_codes`).
+- A user without an active membership for the token's `business_id` receives
+  `has_access=False` with `active_scope_count=0` and an empty `scopes` list.
+- 5 tests added in `tests/test_auth_access_context.py`; all 58 tests pass.
+
 - Restored `docs/reports/WORKFORCE_CROSS_REPO_EVALUATION_REPORT_2026-05-03.md` (full evaluation of all three repos) from closed PR #22 commit 3b7187bea1599463be1a2c90d671db5e924babe3.
 - Added supersession notice to `docs/reports/WORKFORCE_CROSS_REPO_EVALUATION_REPORT.md` pointing to the dated report.
 - No source code changed.
