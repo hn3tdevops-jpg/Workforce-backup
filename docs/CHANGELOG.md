@@ -6,7 +6,8 @@
   - Returns a COMPAT scope derived from the authenticated user's existing RBAC data
     (`get_effective_permission_codes`, `get_effective_role_names`).
   - Response shape: `{user_id, has_access, active_scope_count, scopes, resolved_at}`.
-  - Scope fields: `{effective_permissions, assignments, link_status, employment_status, is_super_admin}`.
+  - Scope fields: `{employee_profile_id, employee_name, employee_code, job_title, department, employment_status, assignments, effective_permissions, is_super_admin, link_status}`.
+  - `assignments` is a list of `AccessContextAssignment` objects `{id, role_name, scope_type, permissions}` — one per resolved role with `scope_type="BUSINESS"`.
   - `has_access=False` and no scope returned when the user has no active membership for the token's `business_id`.
   - `is_super_admin=True` only when permissions include `"*"` or `"superadmin:*"`.
 - `tests/test_auth_access_context.py` — 5 tests covering 401 (unauthenticated), 200 (active member),
