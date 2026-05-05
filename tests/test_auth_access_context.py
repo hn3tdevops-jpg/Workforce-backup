@@ -69,6 +69,20 @@ async def test_access_context_includes_effective_permissions(
     assert "hk.rooms.read" in scope["effective_permissions"]
     assert scope["link_status"] == "COMPAT"
     assert scope["employment_status"] == "ACTIVE"
+    # New frontend-compatible fields
+    assert scope["employee_profile_id"].startswith("compat-ep-")
+    assert "@" in scope["employee_name"]  # should be the user's email
+    assert scope["employee_code"] is None
+    assert scope["job_title"] is None
+    assert scope["department"] is None
+    # assignments must be objects, not plain strings
+    assert isinstance(scope["assignments"], list)
+    assert len(scope["assignments"]) > 0
+    assignment = scope["assignments"][0]
+    assert "id" in assignment
+    assert "role_name" in assignment
+    assert assignment["scope_type"] == "BUSINESS"
+    assert isinstance(assignment["permissions"], list)
 
 
 @pytest.mark.asyncio
