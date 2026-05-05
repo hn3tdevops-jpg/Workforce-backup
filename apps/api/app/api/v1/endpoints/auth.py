@@ -81,6 +81,22 @@ class MeResponse(BaseModel):
     permissions: list[str]
 
 
+class AccessContextAssignment(BaseModel):
+    user_id: uuid.UUID
+    business_id: uuid.UUID
+
+
+class AccessContextScope(BaseModel):
+    roles: list[str]
+    permissions: list[str]
+
+
+class AccessContextResponse(BaseModel):
+    assignment: AccessContextAssignment
+    scope: AccessContextScope
+    compat: str
+
+
 async def _load_active_memberships(
     session: AsyncSession,
     user_id: uuid.UUID,
@@ -330,4 +346,47 @@ async def me(
         memberships=memberships,
         roles=roles,
         permissions=permissions,
+    )
+
+
+@router.get("/me/access-context", response_model=AccessContextResponse)
+async def me_access_context(
+    auth: AuthContext = Depends(get_current_auth_context),
+    session: AsyncSession = Depends(get_async_session),
+) -> AccessContextResponse:
+    """Return the effective access context for the authenticated user.
+
+    Resolves roles and permissions from the canonical RBAC model for the
+    user's current business scope. Returns a single COMPAT scope string
+    that summarises the active context without exposing internal identifiers
+    beyond what is already present in the bearer token claims.
+    """
+    memberships = await session.run_sync(
+        lambda sync_session: get_active_memberships_for_user(sync_session, auth.user_id)
+    )
+    active_for_business = [m for m in memberships if m.business_id == auth.business_id]
+    if not active_for_business:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No active membership for the current business context.",
+        )
+
+    roles, permissions = await _load_roles_and_permissions(
+        session,
+        auth.user_id,
+        auth.business_id,
+    )
+
+    compat = f"COMPAT:user={auth.user_id}:business={auth.business_id}"
+
+    return AccessContextResponse(
+        assignment=AccessContextAssignment(
+            user_id=auth.user_id,
+            business_id=auth.business_id,
+        ),
+        scope=AccessContextScope(
+            roles=roles,
+            permissions=permissions,
+        ),
+        compat=compat,
     )

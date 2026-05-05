@@ -1,5 +1,14 @@
 # Worklog
 
+## 2026-05-05 — Add GET /api/v1/auth/me/access-context endpoint (PR #29)
+- Added `AccessContextAssignment`, `AccessContextScope`, and `AccessContextResponse` Pydantic models to `apps/api/app/api/v1/endpoints/auth.py`.
+- Added `GET /api/v1/auth/me/access-context` endpoint under the existing auth router.
+- Uses `AuthContext`, `auth.user_id`, `auth.business_id`, `get_effective_role_names()`, and `get_effective_permission_codes()` from the canonical RBAC service.
+- Returns a single safe COMPAT scope string for authenticated users with an active membership.
+- Does not bypass RBAC, does not create employee records, and does not conflate system User with Employee files.
+- Added `tests/test_auth_access_context.py` with five focused tests (unauthenticated 401, roles/permissions content, compat scope format, no-membership 403, no employee data in response).
+- All 58 tests pass.
+
 ## 2026-05-03 — Cross-repo evaluation report restored (from PR #22 / commit 3b7187b)
 - Restored `docs/reports/WORKFORCE_CROSS_REPO_EVALUATION_REPORT_2026-05-03.md` (full evaluation of all three repos) from closed PR #22 commit 3b7187bea1599463be1a2c90d671db5e924babe3.
 - Added supersession notice to `docs/reports/WORKFORCE_CROSS_REPO_EVALUATION_REPORT.md` pointing to the dated report.

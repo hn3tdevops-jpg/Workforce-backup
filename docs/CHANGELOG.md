@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-05-05
+### Added
+- `GET /api/v1/auth/me/access-context` — returns the effective access context (roles, permissions, COMPAT scope) for the authenticated user's current business. Requires an active membership; returns 403 if none exists. Does not expose employee data.
+- `AccessContextAssignment`, `AccessContextScope`, `AccessContextResponse` Pydantic models in `apps/api/app/api/v1/endpoints/auth.py`.
+- `tests/test_auth_access_context.py` — five tests covering unauthenticated 401, roles/permissions content, compat scope format, no-membership 403, and no employee data exposure.
+
 ## 2026-05-03
 ### Added
 - `docs/reports/WORKFORCE_CROSS_REPO_EVALUATION_REPORT_2026-05-03.md` — full cross-repo evaluation covering all three repos: workforce-backup (main), Workforce-Showcase (master), Workforce-Console (docs/reconcile-backend-roots). Supersedes placeholder sections in the prior report.
