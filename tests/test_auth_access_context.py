@@ -71,7 +71,7 @@ async def test_access_context_includes_effective_permissions(
     assert scope["employment_status"] == "ACTIVE"
     # New frontend-compatible fields
     assert scope["employee_profile_id"].startswith("compat-ep-")
-    assert "@" in scope["employee_name"]  # should be the user's email
+    assert scope["employee_name"] == user.email
     assert scope["employee_code"] is None
     assert scope["job_title"] is None
     assert scope["department"] is None

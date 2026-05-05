@@ -400,6 +400,8 @@ async def me_access_context(
             id=f"compat-ra-{role}",
             role_name=role,
             scope_type="BUSINESS",
+            # COMPAT mode: per-role permission breakdown is unavailable;
+            # all assignments carry the user's full effective permissions.
             permissions=permissions,
         )
         for role in roles
