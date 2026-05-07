@@ -1,5 +1,22 @@
 # Worklog
 
+## 2026-05-07 — PR #29 hardening (mergeability + contract/doc alignment)
+
+### Changes
+- Merged `main` into `copilot/implement-auth-me-access-context-endpoint` and resolved merge conflict in `docs/WORKLOG.md` to clear PR mergeability blockers.
+- Removed unused `import uuid` from `tests/test_auth_access_context.py`.
+- Reconfirmed the frontend-compatible `/api/v1/auth/me/access-context` scope contract in docs:
+  - `scopes[].employee_profile_id`
+  - `scopes[].employee_name`
+  - `scopes[].employee_code`
+  - `scopes[].job_title`
+  - `scopes[].department`
+  - `scopes[].employment_status`
+  - `scopes[].assignments` as `list[AccessContextAssignment]`
+  - `scopes[].effective_permissions`
+  - `scopes[].is_super_admin`
+  - `scopes[].link_status`
+
 ## 2026-05-05 — Expand AccessContextScope to full frontend-compatible shape (PR #30)
 
 ### Context

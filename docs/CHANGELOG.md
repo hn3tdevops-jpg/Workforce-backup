@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-05-07
+### Changed
+- Hardening for PR #29:
+  - Merged `main` into `copilot/implement-auth-me-access-context-endpoint` to resolve PR mergeability.
+  - Removed unused `import uuid` from `tests/test_auth_access_context.py`.
+  - Confirmed frontend-compatible `scopes[]` fields in `/api/v1/auth/me/access-context` docs:
+    `employee_profile_id`, `employee_name`, `employee_code`, `job_title`, `department`,
+    `employment_status`, `assignments` (`list[AccessContextAssignment]`), `effective_permissions`,
+    `is_super_admin`, `link_status`.
+
 ## 2026-05-05
 ### Added
 - `GET /api/v1/auth/me/access-context` endpoint in `apps/api/app/api/v1/endpoints/auth.py`.
