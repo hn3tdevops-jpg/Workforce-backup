@@ -70,13 +70,6 @@
   - POST /api/v1/auth/login continues to require an active Membership. A newly registered user without an active membership receives 403: {"detail":"User has no active memberships."}
   - This rule is intentionally preserved: login must not create memberships as a side-effect.
 
-- Commands used during investigation and verification:
-  - pytest -q (ran full test suite; 52 passed locally)
-  - pytest -q tests/test_users_endpoints.py::test_invite_user_creates_invited_membership
-  - git add -A && git commit -m "...Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
-  - git push -u origin fix/guard-workforce-models-for-tests
-  - gh pr create / gh pr comment to open PR #18
-
 - Test results summary:
   - Full local test run: 52 passed in ~10s
   - New tests added: tests/test_users_endpoints.py::test_create_user_with_membership and tests/test_users_endpoints.py::test_invite_user_creates_invited_membership

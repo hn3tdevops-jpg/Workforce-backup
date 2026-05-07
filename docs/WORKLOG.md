@@ -1,5 +1,15 @@
 # Worklog
 
+## 2026-05-07 — Documentation cleanup after merged PR #31
+
+### Context
+PR #31 merged the backend `GET /api/v1/auth/me/access-context` implementation, superseding open PR #29 and its hardening follow-up PR #33.
+
+### Changes
+- Updated `docs/reports/REPO_EVALUATION_REPORT.md` so it no longer states the endpoint is missing.
+- Added an explicit historical/supersession note in the report clarifying that missing-endpoint findings were point-in-time and superseded by merged PR #31.
+- Kept process/branch details in WORKLOG and removed branch/process command history from `docs/CHANGELOG.md` to keep CHANGELOG focused on user-facing/operational behavior.
+
 ## 2026-05-05 — Expand AccessContextScope to full frontend-compatible shape (PR #30)
 
 ### Context

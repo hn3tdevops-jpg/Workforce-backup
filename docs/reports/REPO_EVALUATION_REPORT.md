@@ -5,6 +5,8 @@
 **Repository:** hn3tdevops-jpg/Workforce-backup  
 **Related repos inspected:** hn3tdevops-jpg/Workforce-Showcase, hn3tdevops-jpg/Workforce-Console (cross-repo detail in `WORKFORCE_CROSS_REPO_EVALUATION_REPORT_2026-05-03.md`)
 
+> **Historical / supersession note:** This report is a point-in-time evaluation from 2026-05-04. Findings about `GET /api/v1/auth/me/access-context` being absent were superseded by merged PR #31, which implemented the backend endpoint and tests.
+
 ---
 
 ## 1. Executive Summary
@@ -28,7 +30,7 @@ The repository is structurally sound and in active development. The canonical AP
 | Dev DB backup files tracked in git | ❌ D-0005 violation | Multiple `.bak` and `dev.db*.bak` files committed |
 | `response.json` tracked in git | ❌ D-0005 violation | Raw API response artifact committed |
 | Embedded Next.js CORS | ❌ Mismatch | `render.yaml` targets `api-hn3t.pythonanywhere.com` — NOT in CORS allowlist |
-| `GET /auth/me/access-context` | ❌ Not implemented | Required by Showcase frontend; employment-scope permissions silently fail in production |
+| `GET /auth/me/access-context` | ✅ Implemented (superseded finding) | Historical gap from this report was resolved by merged PR #31 |
 | Legacy `packages/workforce` models | ⚠️ Still present | `SKIP_WORKFORCE_MODELS=1` guard required at boot/test to prevent double registration |
 | `startup.sh` seed script | ⚠️ Domain-specific | References `silver_sands_seed_prod`; not portable across tenants |
 | CI (backend-ci.yml) | ✅ Active | Correct PYTHONPATH + SKIP_WORKFORCE_MODELS; runs migrations + tests |
@@ -38,7 +40,7 @@ The repository is structurally sound and in active development. The canonical AP
 
 1. **SQLite-only migration verification**: The migration chain has never been run on PostgreSQL, which is the target production DB shape. Silent failures or incompatibilities would surface at deployment time.
 2. **Dev artifacts tracked in git** (`dev.db.*.bak`, `response.json`, `pyproject.toml.bak`, `index.html.bak`): This violates D-0005, pollutes history, and risks leaking local state.
-3. **Missing `GET /auth/me/access-context` endpoint**: The primary frontend (Workforce-Showcase) calls this on startup. Without it, employment-scope permissions (`hasEmployeePermission()`) are always `false` in production.
+3. **Historical note — `GET /auth/me/access-context` endpoint**: This report originally flagged the endpoint as missing. That finding is now superseded by merged PR #31.
 4. **`SKIP_WORKFORCE_MODELS` boot guard is permanently required**: The legacy `packages/workforce` models are still present and overlap with canonical models. Until this path is formally archived (D-0004), any boot without the guard will cause double SQLAlchemy Table registration.
 5. **Embedded Next.js CORS mismatch**: `render.yaml` configures the embedded Next.js frontend to use `https://api-hn3t.pythonanywhere.com` as the API base — a domain NOT in the CORS allowlist. This deployment configuration would fail if the embedded frontend were deployed via Render.
 
@@ -47,7 +49,7 @@ The repository is structurally sound and in active development. The canonical AP
 1. Remove or `.gitignore` committed dev artifacts (`dev.db.*.bak`, `response.json`, `pyproject.toml.bak`, `index.html.bak`) — Phase 0 hygiene.
 2. Verify Alembic migration chain on PostgreSQL before cutting the `foundation-v0.1` tag (open TODO item).
 3. Create the `foundation-v0.1` tag — required Phase 0 exit criterion.
-4. Implement `GET /api/v1/auth/me/access-context` on the Python backend (or document explicitly that it will not be implemented and update the Showcase frontend accordingly).
+4. Keep endpoint and contract docs aligned across backend and Showcase/OpenAPI artifacts after the merged PR #31 implementation.
 5. Retire or deactivate the legacy `ci.yml` so it does not run alongside `backend-ci.yml`.
 6. Document or remove the `startup.sh` Silver Sands seed reference — it is domain-specific and not portable.
 
@@ -223,8 +225,8 @@ git log -1 --oneline:
 | `/api/v1/assignments` | GET/POST/etc. | Yes | Assignment management |
 | `/api/v1/shifts` | GET/POST/etc. | Yes | Shift management |
 
-**Endpoint NOT implemented (gap identified in cross-repo evaluation):**
-- `GET /api/v1/auth/me/access-context` — required by the Workforce-Showcase frontend at startup for employment-scope permissions; only implemented in the Showcase local Node.js proxy.
+**Superseded gap (now resolved):**
+- `GET /api/v1/auth/me/access-context` is now implemented in the backend via merged PR #31; this section reflects the original 2026-05-04 snapshot finding.
 
 ---
 
@@ -358,7 +360,7 @@ The primary production frontend is in the **Workforce-Showcase** repo (`artifact
 
 ### Notable gaps in test coverage
 
-- No tests for `GET /api/v1/auth/me/access-context` (endpoint does not exist)
+- Historical note: this report predates backend tests for `GET /api/v1/auth/me/access-context`; the endpoint and tests were added later via merged PR #31.
 - No acceptance/integration tests against PostgreSQL
 - No tests for `startup.sh` seed behavior
 - No frontend tests (embedded Next.js has a Jest config but no apparent test files in this directory)
@@ -462,7 +464,7 @@ Note: The `.gitignore` already excludes `*.db`, `*.db.bak*`, and `dev.db.pre_*.b
 
 | Priority | Issue | Source |
 |---|---|---|
-| P2 | Implement `GET /api/v1/auth/me/access-context` or formally document that employment-scope permissions are deferred | Cross-repo eval, CHANGELOG |
+| P2 | Keep `GET /api/v1/auth/me/access-context` contract synchronized between backend responses and frontend/spec consumers | Cross-repo eval, CHANGELOG |
 | P2 | Fix `render.yaml` — change `NEXT_PUBLIC_API_BASE_URL` to `https://hn3t.pythonanywhere.com` or add `api-hn3t.pythonanywhere.com` to CORS allowlist | render.yaml, main.py |
 | P2 | Disable or delete `.github/workflows/ci.yml` (superseded, still runs concurrently) | ci.yml header comment |
 | P2 | Document or remove the Silver Sands domain-specific seed step in `startup.sh` | startup.sh |
@@ -485,7 +487,7 @@ This repo is **partially dependent** on the other Workforce repos in the followi
 
 | Dependency | Repo | Nature | Risk |
 |---|---|---|---|
-| `GET /auth/me/access-context` endpoint | Workforce-Showcase (`artifacts/workforce-console/src/lib/auth-context.tsx`) | Frontend calls endpoint not implemented in this backend | Medium — employment-scope permissions are silently broken in production |
+| `GET /auth/me/access-context` endpoint | Workforce-Showcase (`artifacts/workforce-console/src/lib/auth-context.tsx`) | Backend endpoint implemented in merged PR #31; maintain contract alignment | Low — drift risk if backend/frontend/spec diverge |
 | OpenAPI spec divergence | Workforce-Showcase (`lib/api-spec/openapi.yaml`) | Spec describes `SessionInfo` shape that diverges from `MeResponse` | Low — frontend uses defensive mapping |
 | `bootstrap` endpoint contract | Workforce-Console, Workforce-Showcase | Showcase/Console assumed `GET /bootstrap` returns feature flags; Python backend uses `POST /bootstrap` for one-time init | Medium — confusing; routes should not collide conceptually |
 | Frontend CORS domain | Workforce-Showcase | Showcase frontend targets `https://hn3t.pythonanywhere.com` which IS in allowlist | ✅ No blocker |
