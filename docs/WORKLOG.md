@@ -16,6 +16,7 @@
   - `scopes[].effective_permissions`
   - `scopes[].is_super_admin`
   - `scopes[].link_status`
+- Note: the 2026-05-05 "PR #30" entry below reflects upstream `main` history merged into this branch during PR #29 hardening.
 
 ## 2026-05-05 — Expand AccessContextScope to full frontend-compatible shape (PR #30)
 
