@@ -22,9 +22,9 @@ if _IMPORT_FAILED:
     from sqlalchemy.orm import Mapped, mapped_column, relationship
 
     try:
-        from app.models.base import Base  # type: ignore
+        from app.models.base import Base, UUIDString  # type: ignore
     except Exception:
-        from apps.api.app.models.base import Base  # type: ignore
+        from apps.api.app.models.base import Base, UUIDString  # type: ignore
 
 
     def _sqlite_uuid_server_default():
@@ -39,14 +39,17 @@ if _IMPORT_FAILED:
         __tablename__ = "employee_profiles"
 
         id: Mapped[uuid.UUID] = mapped_column(
+            UUIDString(),
             primary_key=True,
             default=uuid.uuid4,
             server_default=_sqlite_uuid_server_default(),
         )
         business_id: Mapped[uuid.UUID] = mapped_column(
+            UUIDString(),
             ForeignKey("businesses.id", ondelete="CASCADE"), nullable=False, index=True
         )
         location_id: Mapped[uuid.UUID | None] = mapped_column(
+            UUIDString(),
             ForeignKey("locations.id", ondelete="SET NULL"), nullable=True, index=True
         )
         external_id: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)

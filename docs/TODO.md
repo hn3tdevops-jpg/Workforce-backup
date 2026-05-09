@@ -24,7 +24,7 @@ Phase 0 — Foundation Freeze
 - [ ] Define atomic permission catalog
 - [x] Add permission-resolution helpers
 - [ ] Add audit/event tables
-- [ ] Run broader backend test suite
+- [x] Run broader backend test suite (2026-05-09)
 - [ ] Confirm deployment entrypoint uses the updated `SKIP_WORKFORCE_MODELS=1` boot path
 
 ## Later

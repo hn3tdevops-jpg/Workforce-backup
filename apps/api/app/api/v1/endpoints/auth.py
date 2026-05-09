@@ -120,6 +120,10 @@ async def _load_active_memberships(
     return memberships
 
 
+def _uuid_key(value: uuid.UUID | str | None) -> str | None:
+    return None if value is None else str(value)
+
+
 def _choose_membership(
     memberships: list[Membership],
     requested_business_id: uuid.UUID | None,
@@ -128,8 +132,9 @@ def _choose_membership(
     chosen_membership = None
 
     if requested_business_id is not None:
+        requested_business_key = _uuid_key(requested_business_id)
         for membership in memberships:
-            if membership.business_id == requested_business_id:
+            if _uuid_key(membership.business_id) == requested_business_key:
                 chosen_membership = membership
                 break
         if chosen_membership is None:
@@ -141,8 +146,9 @@ def _choose_membership(
 
     user_business_id = getattr(user, "business_id", None)
     if user_business_id is not None:
+        user_business_key = _uuid_key(user_business_id)
         for membership in memberships:
-            if membership.business_id == user_business_id:
+            if _uuid_key(membership.business_id) == user_business_key:
                 chosen_membership = membership
                 break
 

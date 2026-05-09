@@ -22,10 +22,13 @@ if _HAS_CANONICAL_BUSINESS:
     from sqlalchemy.orm import Mapped, relationship, mapped_column
     from sqlalchemy import func, String, JSON, Boolean
 
+    from apps.api.app.models.base import UUIDString
+
     class Tenant(Base):
         __tablename__ = "tenants"
 
         id: Mapped[uuid.UUID] = mapped_column(
+            UUIDString(),
             primary_key=True,
             default=uuid.uuid4,
         )
@@ -47,6 +50,8 @@ else:
     from sqlalchemy import JSON, Boolean, ForeignKey, String, func, text
     from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+    from apps.api.app.models.base import UUIDString
+
 
     def _sqlite_uuid_server_default():
         return text(
@@ -60,6 +65,7 @@ else:
         __tablename__ = "tenants"
 
         id: Mapped[uuid.UUID] = mapped_column(
+            UUIDString(),
             primary_key=True,
             default=uuid.uuid4,
             server_default=_sqlite_uuid_server_default(),
@@ -77,11 +83,13 @@ else:
         __tablename__ = "businesses"
 
         id: Mapped[uuid.UUID] = mapped_column(
+            UUIDString(),
             primary_key=True,
             default=uuid.uuid4,
             server_default=_sqlite_uuid_server_default(),
         )
         tenant_id: Mapped[uuid.UUID | None] = mapped_column(
+            UUIDString(),
             ForeignKey("tenants.id", ondelete="RESTRICT"),
             nullable=True,
             index=True,
@@ -100,11 +108,13 @@ else:
         __tablename__ = "locations"
 
         id: Mapped[uuid.UUID] = mapped_column(
+            UUIDString(),
             primary_key=True,
             default=uuid.uuid4,
             server_default=_sqlite_uuid_server_default(),
         )
         business_id: Mapped[uuid.UUID] = mapped_column(
+            UUIDString(),
             ForeignKey("businesses.id", ondelete="CASCADE"),
             nullable=False,
         )

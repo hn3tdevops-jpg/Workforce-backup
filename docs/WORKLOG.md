@@ -40,6 +40,13 @@ but not the production backend. This adds the missing Python endpoint.
   `has_access=False` with `active_scope_count=0` and an empty `scopes` list.
 - 5 tests added in `tests/test_auth_access_context.py`; all 58 tests pass.
 
+## 2026-05-09 — SQLite UUID binding recovery for local test models
+- Added `UUIDString` in `apps/api/app/models/base.py` as the shared string-backed UUID binder for the local SQLAlchemy model surface.
+- Updated local UUID primary keys and foreign keys in `tenant_local.py`, `user_local.py`, `access_control_local.py`, `employee_local.py`, and `user_employee_link_local.py` so SQLite accepts `uuid.UUID` inputs without changing column shape.
+- Normalized auth business-switch membership matching to compare UUID identifiers by value after reading string-backed rows from SQLite.
+- Verification: `PYTHONPATH=apps/api SKIP_WORKFORCE_MODELS=1 python -m pytest -q tests/test_auth_endpoints.py tests/test_bootstrap.py tests/test_employee_link.py tests/test_location_scope_behavior.py tests/test_me_businesses.py tests/test_me_effective_permissions.py tests/test_route_protection_assignments.py tests/test_route_protection_rooms.py tests/test_route_protection_shifts.py tests/test_route_protection_tasks.py` and `PYTHONPATH=apps/api SKIP_WORKFORCE_MODELS=1 python -m pytest -q` both passed locally.
+
+## 2026-05-03 — Cross-repo evaluation report restored (from PR #22 / commit 3b7187b)
 - Restored `docs/reports/WORKFORCE_CROSS_REPO_EVALUATION_REPORT_2026-05-03.md` (full evaluation of all three repos) from closed PR #22 commit 3b7187bea1599463be1a2c90d671db5e924babe3.
 - Added supersession notice to `docs/reports/WORKFORCE_CROSS_REPO_EVALUATION_REPORT.md` pointing to the dated report.
 - No source code changed.

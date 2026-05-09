@@ -22,7 +22,7 @@ if not _IMPORTED_CANONICAL:
 
     # Always use the apps API Base which itself prefers the canonical DeclarativeBase
     # unless SKIP_WORKFORCE_MODELS is set; this keeps metadata consistent.
-    from apps.api.app.models.base import Base
+    from apps.api.app.models.base import Base, UUIDString
 
 
     def _sqlite_uuid_server_default():
@@ -42,20 +42,31 @@ if not _IMPORTED_CANONICAL:
         )
 
         id: Mapped[uuid.UUID] = mapped_column(
+            UUIDString(),
             primary_key=True,
             default=uuid.uuid4,
             server_default=_sqlite_uuid_server_default(),
         )
-        user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+        user_id: Mapped[uuid.UUID] = mapped_column(
+            UUIDString(),
+            ForeignKey("users.id", ondelete="CASCADE"),
+            nullable=False,
+        )
         employee_id: Mapped[uuid.UUID] = mapped_column(
+            UUIDString(),
             ForeignKey("employee_profiles.id", ondelete="CASCADE"), nullable=False
         )
         business_id: Mapped[uuid.UUID] = mapped_column(
+            UUIDString(),
             ForeignKey("businesses.id", ondelete="CASCADE"), nullable=False, index=True
         )
         is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="1")
         created_at: Mapped[datetime | None] = mapped_column(server_default=func.now())
-        created_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+        created_by: Mapped[uuid.UUID | None] = mapped_column(
+            UUIDString(),
+            ForeignKey("users.id", ondelete="SET NULL"),
+            nullable=True,
+        )
 
         user = relationship("User", foreign_keys=[user_id])
         employee = relationship("EmployeeProfile", foreign_keys=[employee_id])

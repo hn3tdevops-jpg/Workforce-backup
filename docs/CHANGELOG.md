@@ -7,12 +7,18 @@
     (`get_effective_permission_codes`, `get_effective_role_names`).
   - Response shape: `{user_id, has_access, active_scope_count, scopes, resolved_at}`.
   - Scope fields: `{employee_profile_id, employee_name, employee_code, job_title, department, employment_status, assignments, effective_permissions, is_super_admin, link_status}`.
-  - `assignments` is a list of `AccessContextAssignment` objects `{id, role_name, scope_type, permissions}` — one per resolved role with `scope_type="BUSINESS"`.
+- `assignments` is a list of `AccessContextAssignment` objects `{id, role_name, scope_type, permissions}` — one per resolved role with `scope_type="BUSINESS"`.
   - `has_access=False` and no scope returned when the user has no active membership for the token's `business_id`.
   - `is_super_admin=True` only when permissions include `"*"` or `"superadmin:*"`.
 - `tests/test_auth_access_context.py` — 5 tests covering 401 (unauthenticated), 200 (active member),
   effective_permissions presence, active_scope_count=1 for COMPAT, and no scope for missing membership.
 
+## 2026-05-09
+### Fixed
+- Local SQLite-backed SQLAlchemy models now use a shared `UUIDString` type in `apps/api/app/models/base.py`, so test fixtures can seed `uuid.UUID` objects directly while the database still stores 36-character UUID strings.
+- Normalized `/api/v1/auth/switch-business` membership selection to compare UUID-backed identifiers by value across string-backed SQLite rows and UUID token claims.
+
+## 2026-05-03
 ### Added
 - `docs/reports/WORKFORCE_CROSS_REPO_EVALUATION_REPORT_2026-05-03.md` — full cross-repo evaluation covering all three repos: workforce-backup (main), Workforce-Showcase (master), Workforce-Console (docs/reconcile-backend-roots). Supersedes placeholder sections in the prior report.
   - Exact backend route inventory and schema shapes

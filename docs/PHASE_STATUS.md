@@ -15,5 +15,5 @@ Stabilize the repository structure, planning system, and restore process before 
 
 ## Current checkpoint
 - The app import path now defaults to the safe local model surface via `SKIP_WORKFORCE_MODELS=1` in the entrypoints.
-- Health, bootstrap, and route-protection tests are passing locally.
-- Next step: validate the full suite and then confirm the deployment entrypoint picks up the updated boot path.
+- Health, bootstrap, route-protection, and the full backend suite are passing locally after normalizing SQLite UUID handling in the local model layer.
+- Next step: confirm the deployment entrypoint picks up the updated boot path.

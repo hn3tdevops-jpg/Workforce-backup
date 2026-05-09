@@ -59,7 +59,7 @@ if not _IMPORTED_CANONICAL:
     from sqlalchemy import Boolean, ForeignKey, Index, PrimaryKeyConstraint, String, Text, UniqueConstraint, func, text
     from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-    from apps.api.app.models.base import Base
+    from apps.api.app.models.base import Base, UUIDString
 
 
     def _sqlite_uuid_server_default():
@@ -79,14 +79,17 @@ if not _IMPORTED_CANONICAL:
         )
 
         id: Mapped[uuid.UUID] = mapped_column(
+            UUIDString(),
             primary_key=True,
             default=uuid.uuid4,
             server_default=_sqlite_uuid_server_default(),
         )
         user_id: Mapped[uuid.UUID] = mapped_column(
+            UUIDString(),
             ForeignKey("users.id", ondelete="CASCADE"), nullable=False,
         )
         business_id: Mapped[uuid.UUID] = mapped_column(
+            UUIDString(),
             ForeignKey("businesses.id", ondelete="CASCADE"), nullable=False,
         )
         status: Mapped[str] = mapped_column(String(32), nullable=False, default="active", server_default="active")
@@ -105,11 +108,13 @@ if not _IMPORTED_CANONICAL:
         )
 
         id: Mapped[uuid.UUID] = mapped_column(
+            UUIDString(),
             primary_key=True,
             default=uuid.uuid4,
             server_default=_sqlite_uuid_server_default(),
         )
         business_id: Mapped[uuid.UUID] = mapped_column(
+            UUIDString(),
             ForeignKey("businesses.id", ondelete="CASCADE"),
             nullable=False,
         )
@@ -128,6 +133,7 @@ if not _IMPORTED_CANONICAL:
         )
 
         id: Mapped[uuid.UUID] = mapped_column(
+            UUIDString(),
             primary_key=True,
             default=uuid.uuid4,
             server_default=_sqlite_uuid_server_default(),
@@ -145,9 +151,11 @@ if not _IMPORTED_CANONICAL:
         )
 
         role_id: Mapped[uuid.UUID] = mapped_column(
+            UUIDString(),
             ForeignKey("roles.id", ondelete="CASCADE"), nullable=False,
         )
         permission_id: Mapped[uuid.UUID] = mapped_column(
+            UUIDString(),
             ForeignKey("permissions.id", ondelete="CASCADE"), nullable=False,
         )
 
@@ -164,17 +172,21 @@ if not _IMPORTED_CANONICAL:
         )
 
         id: Mapped[uuid.UUID] = mapped_column(
+            UUIDString(),
             primary_key=True,
             default=uuid.uuid4,
             server_default=_sqlite_uuid_server_default(),
         )
         membership_id: Mapped[uuid.UUID] = mapped_column(
+            UUIDString(),
             ForeignKey("memberships.id", ondelete="CASCADE"), nullable=False,
         )
         role_id: Mapped[uuid.UUID] = mapped_column(
+            UUIDString(),
             ForeignKey("roles.id", ondelete="CASCADE"), nullable=False,
         )
         location_id: Mapped[uuid.UUID | None] = mapped_column(
+            UUIDString(),
             ForeignKey("locations.id", ondelete="CASCADE"), nullable=True,
         )
         created_at: Mapped[datetime | None] = mapped_column(server_default=func.now())
@@ -200,7 +212,7 @@ if 'ScopedRoleAssignment' not in globals():
 
     from sqlalchemy import Boolean, ForeignKey, Index, String, Text, func, text
     from sqlalchemy.orm import Mapped, mapped_column, relationship
-    from apps.api.app.models.base import Base
+    from apps.api.app.models.base import Base, UUIDString
 
 
     def _sqlite_uuid_server_default():
@@ -220,17 +232,21 @@ if 'ScopedRoleAssignment' not in globals():
         )
 
         id: Mapped[uuid.UUID] = mapped_column(
+            UUIDString(),
             primary_key=True,
             default=uuid.uuid4,
             server_default=_sqlite_uuid_server_default(),
         )
         membership_id: Mapped[uuid.UUID] = mapped_column(
+            UUIDString(),
             ForeignKey("memberships.id", ondelete="CASCADE"), nullable=False,
         )
         role_id: Mapped[uuid.UUID] = mapped_column(
+            UUIDString(),
             ForeignKey("roles.id", ondelete="CASCADE"), nullable=False,
         )
         location_id: Mapped[uuid.UUID | None] = mapped_column(
+            UUIDString(),
             ForeignKey("locations.id", ondelete="CASCADE"), nullable=True,
         )
         created_at: Mapped[datetime | None] = mapped_column(server_default=func.now())
