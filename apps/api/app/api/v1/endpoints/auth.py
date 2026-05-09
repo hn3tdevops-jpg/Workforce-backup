@@ -382,11 +382,18 @@ async def me_access_context(
     resolved_at = datetime.now(timezone.utc).isoformat()
 
     memberships = await _load_active_memberships(session, auth.user_id)
-    has_active_membership = any(
-        m.business_id == auth.business_id for m in memberships
+    auth_business_key = _uuid_key(auth.business_id)
+
+    chosen_membership = next(
+        (
+            membership
+            for membership in memberships
+            if _uuid_key(membership.business_id) == auth_business_key
+        ),
+        None,
     )
 
-    if not has_active_membership:
+    if chosen_membership is None:
         return AccessContextResponse(
             user_id=auth.user_id,
             has_access=False,
@@ -396,7 +403,9 @@ async def me_access_context(
         )
 
     roles, permissions = await _load_roles_and_permissions(
-        session, auth.user_id, auth.business_id
+        session,
+        auth.user_id,
+        chosen_membership.business_id,
     )
 
     is_super_admin = "*" in permissions or "superadmin:*" in permissions
