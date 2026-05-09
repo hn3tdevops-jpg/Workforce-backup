@@ -3,8 +3,7 @@
 ## 2026-05-07
 ### Changed
 - Hardening for PR #29:
-  - Reconciled branch history on `copilot/hardeningimplement-auth-me-access-context-endpoint` for PR #33 (`copilot/hardeningimplement-auth-me-access-context-endpoint` -> `copilot/implement-auth-me-access-context-endpoint`) to resolve mergeability for the PR #29 line.
-  - Merging PR #33 will carry that hardening-branch reconciliation into the PR #29 branch.
+  - Clarified docs to reflect that `GET /api/v1/auth/me/access-context` was added in PR #29 and contract-aligned in PR #30/#33.
   - Removed unused `import uuid` from `tests/test_auth_access_context.py`.
   - Confirmed frontend-compatible `scopes[]` fields in `/api/v1/auth/me/access-context` docs:
     `employee_profile_id`, `employee_name`, `employee_code`, `job_title`, `department`,
