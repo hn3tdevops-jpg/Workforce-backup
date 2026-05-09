@@ -362,6 +362,7 @@ The primary production frontend is in the **Workforce-Showcase** repo (`artifact
 | `test_users_endpoints.py` | 103 | User creation, invite |
 | `test_employee_link.py` | 139 | User-employee link |
 | `test_api_phase3.py` | 36 | Phase 3 API smoke tests |
+| `test_auth_access_context.py` | 132 | GET /api/v1/auth/me/access-context contract/auth/scope behavior |
 | `conftest.py` | 279 | Shared fixtures and DB setup |
 
 ### Notable gaps in test coverage
@@ -374,7 +375,9 @@ The primary production frontend is in the **Workforce-Showcase** repo (`artifact
 
 ### Known warnings
 
-All 44 warnings are `RuntimeWarning: SECRET_KEY is not configured` — emitted during JWT token creation in route protection tests. Not a functional failure but should be resolved by setting `SECRET_KEY` in the test fixture or `conftest.py`.
+**Historical baseline (2026-05-04):** 44 warnings — all `RuntimeWarning: SECRET_KEY is not configured`, emitted during JWT token creation in route protection tests.
+
+**Current branch (2026-05-09):** 52 warnings — the same `RuntimeWarning: SECRET_KEY is not configured`. The increase from 44 to 52 is due to additional JWT token creation calls in the 5 tests added by `tests/test_auth_access_context.py`. Not a functional failure but should be resolved by setting `SECRET_KEY` in the test fixture or `conftest.py`.
 
 ---
 
