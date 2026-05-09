@@ -335,6 +335,12 @@ The primary production frontend is in the **Workforce-Showcase** repo (`artifact
 **Required env:** `PYTHONPATH=apps/api SKIP_WORKFORCE_MODELS=1`  
 **Verified result (this evaluation):** **53 passed, 44 warnings** in ~7.8s
 
+> **Current branch verification note (2026-05-09):** After the access-context follow-up branch (PR #29 and follow-up hardening) the suite reports:
+> ```
+> PYTHONPATH=apps/api SKIP_WORKFORCE_MODELS=1 python -m pytest -q tests
+> ```
+> Result: **58 passed, 52 warnings** (5 tests added by `tests/test_auth_access_context.py`; warnings increase from additional JWT token creation calls in those tests).
+
 ### Test files
 
 | File | Lines | Coverage area |
