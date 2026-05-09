@@ -30,7 +30,7 @@ The repository is structurally sound and in active development. The canonical AP
 | Dev DB backup files tracked in git | ❌ D-0005 violation | Multiple `.bak` and `dev.db*.bak` files committed |
 | `response.json` tracked in git | ❌ D-0005 violation | Raw API response artifact committed |
 | Embedded Next.js CORS | ❌ Mismatch | `render.yaml` targets `api-hn3t.pythonanywhere.com` — NOT in CORS allowlist |
-| `GET /auth/me/access-context` | ✅ Implemented (PR #29; aligned in PR #30/#33) | Endpoint is present; scope contract aligned for Showcase frontend |
+| `GET /api/v1/auth/me/access-context` | ✅ Implemented (PR #29; aligned in PR #30/#33) | Endpoint is present; scope contract aligned for Showcase frontend |
 | Legacy `packages/workforce` models | ⚠️ Still present | `SKIP_WORKFORCE_MODELS=1` guard required at boot/test to prevent double registration |
 | `startup.sh` seed script | ⚠️ Domain-specific | References `silver_sands_seed_prod`; not portable across tenants |
 | CI (backend-ci.yml) | ✅ Active | Correct PYTHONPATH + SKIP_WORKFORCE_MODELS; runs migrations + tests |
@@ -40,7 +40,7 @@ The repository is structurally sound and in active development. The canonical AP
 
 1. **SQLite-only migration verification**: The migration chain has never been run on PostgreSQL, which is the target production DB shape. Silent failures or incompatibilities would surface at deployment time.
 2. **Dev artifacts tracked in git** (`dev.db.*.bak`, `response.json`, `pyproject.toml.bak`, `index.html.bak`): This violates D-0005, pollutes history, and risks leaking local state.
-3. **(Superseded) `GET /auth/me/access-context` endpoint gap**: This was true at evaluation time and is now resolved by PR #29 with contract alignment in PR #30/#33.
+3. **(Superseded) `GET /api/v1/auth/me/access-context` endpoint gap**: This was true at evaluation time and is now resolved by PR #29 with contract alignment in PR #30/#33.
 4. **`SKIP_WORKFORCE_MODELS` boot guard is permanently required**: The legacy `packages/workforce` models are still present and overlap with canonical models. Until this path is formally archived (D-0004), any boot without the guard will cause double SQLAlchemy Table registration.
 5. **Embedded Next.js CORS mismatch**: `render.yaml` configures the embedded Next.js frontend to use `https://api-hn3t.pythonanywhere.com` as the API base — a domain NOT in the CORS allowlist. This deployment configuration would fail if the embedded frontend were deployed via Render.
 
@@ -335,6 +335,12 @@ The primary production frontend is in the **Workforce-Showcase** repo (`artifact
 **Required env:** `PYTHONPATH=apps/api SKIP_WORKFORCE_MODELS=1`  
 **Verified result (this evaluation):** **53 passed, 44 warnings** in ~7.8s
 
+> **Current branch verification note (2026-05-09):** Running the test suite on the current branch (`copilot/fix-docs-consistency-issues`) with the canonical command:
+> ```
+> PYTHONPATH=apps/api SKIP_WORKFORCE_MODELS=1 python -m pytest -q tests
+> ```
+> Result: **58 passed, 52 warnings**
+
 ### Test files
 
 | File | Lines | Coverage area |
@@ -487,7 +493,7 @@ This repo is **partially dependent** on the other Workforce repos in the followi
 
 | Dependency | Repo | Nature | Risk |
 |---|---|---|---|
-| `GET /auth/me/access-context` endpoint | Workforce-Showcase (`artifacts/workforce-console/src/lib/auth-context.tsx`) | Frontend depends on this endpoint; backend implementation is now present and contract-aligned in PR #29/#30/#33 | Low — keep contracts synchronized across repos |
+| `GET /api/v1/auth/me/access-context` endpoint | Workforce-Showcase (`artifacts/workforce-console/src/lib/auth-context.tsx`) | Frontend depends on this endpoint; backend implementation is now present and contract-aligned in PR #29/#30/#33 | Low — keep contracts synchronized across repos |
 | OpenAPI spec divergence | Workforce-Showcase (`lib/api-spec/openapi.yaml`) | Spec describes `SessionInfo` shape that diverges from `MeResponse` | Low — frontend uses defensive mapping |
 | `bootstrap` endpoint contract | Workforce-Console, Workforce-Showcase | Showcase/Console assumed `GET /bootstrap` returns feature flags; Python backend uses `POST /bootstrap` for one-time init | Medium — confusing; routes should not collide conceptually |
 | Frontend CORS domain | Workforce-Showcase | Showcase frontend targets `https://hn3t.pythonanywhere.com` which IS in allowlist | ✅ No blocker |
