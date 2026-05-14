@@ -1,5 +1,4 @@
 """Tests for GET /api/v1/auth/me/access-context (COMPAT scope)."""
-import uuid
 
 import pytest
 from httpx import AsyncClient

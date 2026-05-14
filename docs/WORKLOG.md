@@ -1,5 +1,38 @@
 # Worklog
 
+## 2026-05-07 — PR #29 hardening (mergeability + contract/doc alignment)
+
+### Changes
+- Reconciled branch history on `copilot/hardeningimplement-auth-me-access-context-endpoint` for PR #33 targeting `copilot/implement-auth-me-access-context-endpoint`, including resolution in `docs/WORKLOG.md`, to clear mergeability blockers.
+- Removed unused `import uuid` from `tests/test_auth_access_context.py`.
+- Reconfirmed the frontend-compatible `/api/v1/auth/me/access-context` scope contract in docs:
+  - `scopes[].employee_profile_id`
+  - `scopes[].employee_name`
+  - `scopes[].employee_code`
+  - `scopes[].job_title`
+  - `scopes[].department`
+  - `scopes[].employment_status`
+  - `scopes[].assignments` as `list[AccessContextAssignment]`
+  - `scopes[].effective_permissions`
+  - `scopes[].is_super_admin`
+  - `scopes[].link_status`
+- Note: the 2026-05-05 "PR #30" entry below is present via branch reconciliation performed on the hardening branch; it flows into the PR #29 branch when PR #33 merges.
+
+## 2026-05-05 — Expand AccessContextScope to full frontend-compatible shape (PR #30)
+
+### Context
+PR #30 follow-up to PR #29. Expanded `AccessContextScope` to the full shape expected by
+Workforce-Showcase's `EmploymentScope` interface. Added `AccessContextAssignment` model.
+
+### Changes
+- Added `AccessContextAssignment` model: `{id, role_name, scope_type, permissions}`.
+- `AccessContextScope` now includes `employee_profile_id`, `employee_name`, `employee_code`,
+  `job_title`, `department` fields alongside the existing fields.
+- `assignments` changed from `list[str]` to `list[AccessContextAssignment]`.
+- One assignment is emitted per resolved role; each carries full effective permissions in COMPAT mode.
+- Updated `test_access_context_includes_effective_permissions` to assert new shape and `employee_name`.
+- 58 tests pass.
+
 ## 2026-05-05 — Add GET /api/v1/auth/me/access-context endpoint
 
 ### Context
