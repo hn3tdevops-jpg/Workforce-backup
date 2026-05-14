@@ -1,6 +1,5 @@
 import sys
 import os
-import asyncio
 
 project_home = os.path.abspath(os.path.dirname(__file__))
 if project_home not in sys.path:

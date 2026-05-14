@@ -1,6 +1,6 @@
 import uuid
 from apps.api.app.db.session import SessionLocal
-from apps.api.app.models.housekeeping_models import Unit, Task, UnitStatus, TaskStatus, TaskStatusEvent, AuditEvent, ChecklistTemplate, ChecklistTemplateItem, ChecklistRun, ChecklistRunItem, ChecklistRunStatus
+from apps.api.app.models.housekeeping_models import Unit, Task, TaskStatus, TaskStatusEvent, AuditEvent, ChecklistTemplate, ChecklistTemplateItem, ChecklistRun, ChecklistRunItem
 import datetime
 import json
 

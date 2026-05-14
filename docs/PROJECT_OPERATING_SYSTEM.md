@@ -1,7 +1,7 @@
 # Project Operating System
 
 ## Source of truth
-- `docs/MASTER_PLAN.md`
+- `docs/plans/HN3T_MASTER_PLAN.md`
 - `docs/ROADMAP.md`
 - `docs/TODO.md`
 - `docs/WORKLOG.md`

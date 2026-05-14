@@ -2,15 +2,13 @@
 HKops tests — rooms, task types, tasks, inspections, audit trail.
 Uses in-memory SQLite via TestClient with overridden DB dependency.
 """
-import json
 import os
 import pytest
-from datetime import datetime, timezone
 
 os.environ.setdefault("DATABASE_URL", "sqlite://")
 
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import StaticPool
 
@@ -21,8 +19,7 @@ from apps.api.app.models.identity import (
     BizRole, BizRolePermission, MembershipRole, Permission,
 )
 from apps.api.app.models.hkops import (
-    HKRoom, HKTaskType, HKTask, HKInspection,
-    RoomStatus, TaskStatus, TaskPriority, InspectionResult,
+    HKTask, TaskStatus,
 )
 from apps.api.app.core.security import create_access_token
 from apps.api.app.core.db import get_db
@@ -100,7 +97,6 @@ def setup_data(engine, db_factory):
 def client(engine, db_factory):
     """Patch app.core.db to use test engine, then create TestClient."""
     import apps.api.app.core.db as _db_module
-    import apps.api.app.main as _main_module
     from apps.api.app.models.base import Base as _Base
 
     # Point the app's own engine and session factory at the test in-memory DB

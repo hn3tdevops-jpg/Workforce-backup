@@ -1,24 +1,17 @@
 "use client"
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useAuth } from '../lib/auth-store'
 
 const NAV_SECTIONS = [
   {
     label: 'Operations',
     links: [
       { label: 'Dashboard', href: '/', icon: '📊' },
-      { label: 'Room Board', href: '/rooms', icon: '🏨' },
-      { label: 'Housekeeping', href: '/housekeeping', icon: '🧹' },
-      { label: 'Maintenance', href: '/maintenance', icon: '🔧' },
-      { label: 'Inspections', href: '/inspections', icon: '✅' },
-      { label: 'Inventory', href: '/inventory', icon: '📦' },
-    ],
-  },
-  {
-    label: 'Configuration',
-    links: [
-      { label: 'Property Setup', href: '/property-setup', icon: '🏗️' },
-      { label: 'Settings', href: '/settings', icon: '⚙️' },
+      { label: 'Rooms', href: '/rooms', icon: '🏨', perm: 'hk.rooms.read' },
+      { label: 'Housekeeping', href: '/housekeeping', icon: '🧹', perm: 'hk.tasks.manage' },
+      { label: 'Assignments', href: '/assignments', icon: '📅', perm: 'schedule.read' },
+      { label: 'Shifts', href: '/shifts', icon: '⏱️', perm: 'time.read' },
     ],
   },
 ]
@@ -30,6 +23,7 @@ export interface SidebarProps {
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname()
+  const { hasPermission } = useAuth()
 
   return (
     <>
@@ -59,24 +53,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           </button>
         </div>
 
-        <div className="sidebar-business">
-          <label htmlFor="sidebar-business-select" className="sidebar-business-label">
-            Property
-          </label>
-          <select
-            id="sidebar-business-select"
-            className="sidebar-business-select"
-            defaultValue="Silver Sands Motel"
-          >
-            <option>Silver Sands Motel</option>
-          </select>
-        </div>
-
         {NAV_SECTIONS.map((section) => (
           <div key={section.label}>
             <div className="sidebar-section-label">{section.label}</div>
             <ul className="sidebar-nav" role="list">
-              {section.links.map(({ label, href, icon }) => {
+              {section.links.map(({ label, href, icon, perm }) => {
+                if (perm && !hasPermission(perm)) return null
                 const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href)
                 return (
                   <li key={href}>

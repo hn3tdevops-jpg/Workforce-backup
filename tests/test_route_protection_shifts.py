@@ -9,7 +9,8 @@ from app.core.security import create_access_token
 from app.models.access_control import Membership, Role, ScopedRoleAssignment
 from app.models.tenant import Business, Location, Tenant
 from app.models.user import User
-from app.services.rbac_seed_service import async_seed_default_roles_for_business
+from app.services.rbac_seed_service import \
+    async_seed_default_roles_for_business
 
 
 async def seed_user(
@@ -18,9 +19,15 @@ async def seed_user(
     with_membership: bool,
     with_owner_assignment: bool,
 ) -> tuple[str, uuid.UUID]:
-    tenant = Tenant(id=uuid.uuid4(), name="Tenant 1", slug=f"tenant-{uuid.uuid4().hex[:8]}")
-    business = Business(id=uuid.uuid4(), tenant_id=tenant.id, name="Business 1")
-    location = Location(id=uuid.uuid4(), business_id=business.id, name="Location A")
+    tenant = Tenant(
+        id=uuid.uuid4(), name="Tenant 1", slug=f"tenant-{uuid.uuid4().hex[:8]}"
+    )
+    business = Business(
+        id=uuid.uuid4(), tenant_id=tenant.id, name="Business 1"
+    )
+    location = Location(
+        id=uuid.uuid4(), business_id=business.id, name="Location A"
+    )
     user = User(
         id=uuid.uuid4(),
         email=f"user-{uuid.uuid4().hex[:8]}@example.com",
@@ -44,7 +51,9 @@ async def seed_user(
         await db_session.flush()
 
         if with_owner_assignment:
-            await async_seed_default_roles_for_business(db_session, business.id)
+            await async_seed_default_roles_for_business(
+                db_session, business.id
+            )
             owner_role = await db_session.scalar(
                 select(Role).where(
                     Role.business_id == business.id,

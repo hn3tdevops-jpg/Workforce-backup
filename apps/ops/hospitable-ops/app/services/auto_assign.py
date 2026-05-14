@@ -1,7 +1,6 @@
 from typing import List, Dict
 from apps.api.app.services.integrations_workforce import fetch_shifts
 from apps.api.app.db.session import SessionLocal
-from apps.api.app.models.integrations_models import ShiftRef
 
 # Simple weighted round-robin by shift duration
 

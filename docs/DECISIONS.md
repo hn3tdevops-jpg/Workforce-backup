@@ -108,3 +108,49 @@ Decision:
 
 Rationale:
 SQLite does not support the same ALTER TABLE constraint operations as PostgreSQL. Batch mode avoids partial migration churn during foundation work.
+
+## D-0011 Canonical RBAC model — roles / role_permissions / scoped_role_assignments
+Date: 2026-05-03
+Status: accepted
+
+Decision:
+- The canonical runtime RBAC schema is: `memberships`, `roles`, `role_permissions`, `permissions`, `scoped_role_assignments`.
+- These tables are created by migration `0003_platform_access_control` and are authoritative.
+- The corresponding runtime models are defined in `apps/api/app/models/access_control_local.py` (aliased through `apps/api/app/models/access_control.py` → `app/models/access_control`).
+- The service layer (`app/services/rbac_service.py`) uses `Role`, `Permission`, `RolePermission`, `ScopedRoleAssignment`, `Membership` from this canonical schema.
+- The tables `biz_roles`, `biz_role_permissions`, `membership_roles`, `membership_location_roles` exist only in `packages/workforce/workforce/app/models/identity.py` (the frozen legacy package surface per D-0004). They are **not** created by any migration in the canonical Alembic surface and are **not** used by the runtime API.
+- `SKIP_WORKFORCE_MODELS=1` must remain set at boot (and in tests) to prevent double SQLAlchemy Table registration caused by the overlap in `memberships` / `permissions` table names between the local models and the packages/workforce identity module. Do not remove this guard until the packages/workforce import path is fully eliminated or its metadata is decoupled from the canonical Base.
+
+RBAC model summary:
+- A `Membership` links a `User` to a `Business` (with optional `primary_location_id`).
+- A `ScopedRoleAssignment` attaches a `Role` to a `Membership`, optionally scoped to a `Location` (NULL = business-wide).
+- A `Role` has one or more `RolePermission` rows linking it to atomic `Permission.code` strings (e.g. `schedule:read`).
+- Permission checks traverse: User → Membership → ScopedRoleAssignment → Role → RolePermission → Permission.code.
+
+Follow-ups:
+- When the packages/workforce surface is formally archived (D-0004), remove the SKIP_WORKFORCE_MODELS guard and the conditional import logic in access_control.py / access_control_local.py.
+- Add a migration that backfills any MembershipRole rows if a future domain pack re-introduces per-membership role labels.
+
+## MIGRATION-2026-04-24 Alembic head merge and migration reconciliation
+Date: 2026-04-24
+Status: recorded
+
+Decision:
+- Unify divergent Alembic heads by adding a no-op merge revision to stabilize the migration graph in repository history.
+- Record missing/stub migrations only when necessary to reconcile dev DB state; prefer explicit, audited revisions.
+
+Actions taken:
+- Removed optional dependency 'asgi2wsgi' from pyproject.toml and regenerated poetry.lock to fix dependency resolution.
+- Installed dependencies via Poetry and ran tests locally: 49 passed.
+- Created alembic/versions/merge_0002_20260420_proper.py to merge 0002_normalize_uuid_columns and 20260420_consolidate_models.
+- Backed up and rebuilt the local SQLite dev DB from migrations and stamped it at the merge head.
+- Reverted intermediate automated merge attempts and restored DB from backup when recovery was safer.
+- Committed migration changes locally and pushed to origin after reconciling branch history.
+
+Rationale:
+- Multiple heads in the migration graph cause Alembic upgrade failures and deployment instability. A documented merge revision records intent and allows linear upgrades.
+
+Follow-ups:
+- Publish a detailed MIGRATION_PLAN in docs describing canonical model consolidation and any required data backfills.
+- After CI verification, open a PR and merge; then remove transient *_local modules with targeted migrations.
+- Keep migrations additive and reversible; avoid destructive changes without staging verification.

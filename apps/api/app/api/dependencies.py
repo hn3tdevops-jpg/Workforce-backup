@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
+from typing import Callable, Any
+import logging
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -9,10 +11,12 @@ from jose import JWTError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.security import decode_access_token
-from app.db.session import get_async_session
-from app.models.user import User
-from app.services.rbac_service import user_has_permission
+from apps.api.app.core.security import decode_access_token
+from apps.api.app.db.session import get_async_session
+from apps.api.app.models.user import User
+from apps.api.app.services.rbac_service import user_has_permission
+
+logger = logging.getLogger(__name__)
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -37,6 +41,7 @@ async def get_current_auth_context(
 
     try:
         claims = decode_access_token(credentials.credentials)
+        print("DEBUG get_current_auth_context: decoded claims=", claims)
     except JWTError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -45,6 +50,7 @@ async def get_current_auth_context(
 
     sub = claims.get("sub")
     business_id_raw = claims.get("business_id")
+    print("DEBUG get_current_auth_context: raw sub=", sub, "business_id_raw=", business_id_raw)
 
     if not sub or not business_id_raw:
         raise HTTPException(
@@ -61,12 +67,20 @@ async def get_current_auth_context(
             detail="Access token contains invalid identifiers.",
         ) from exc
 
+    # Debug: list all users visible to this session
+    try:
+        users = (await session.scalars(select(User))).all()
+        print("DEBUG get_current_auth_context: all users=", [dict(id=str(u.id), email=u.email, is_active=u.is_active) for u in users])
+    except Exception as _:
+        print("DEBUG get_current_auth_context: failed to list all users")
+
     user = await session.scalar(
         select(User).where(
             User.id == user_id,
             User.is_active.is_(True),
         )
     )
+    print("DEBUG get_current_auth_context: resolved user_id=", user_id, "query_result=", getattr(user, 'id', None))
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -80,6 +94,78 @@ async def get_current_auth_context(
         claims=claims,
     )
 
+
+from fastapi import Query  # noqa: E402
+
+# Query import appears after other code intentionally; keep at top for linters
+
+def resolve_location_from_query(location_id: str | None = Query(None)) -> uuid.UUID | None:
+    """Resolve a location_id from query parameters and return a UUID or None.
+
+    This is a simple resolver intended for list endpoints that accept an
+    optional `location_id` query parameter. It returns None on parse error
+    to preserve existing business-scoped behavior.
+    """
+    if location_id is None:
+        return None
+    try:
+        return uuid.UUID(location_id)
+    except ValueError:
+        return None
+
+
+def require_permission_with_location(permission_code: str, location_resolver: Callable[..., Any] | None = None):
+    """Compatibility helper: permission dependency that optionally accepts
+    a location resolver dependency and forwards the resolved location_id
+    into the permission check.
+    """
+    # If no resolver is provided, fall back to business-scoped checks.
+    if location_resolver is None:
+        async def dependency(
+            auth: AuthContext = Depends(get_current_auth_context),
+            session: AsyncSession = Depends(get_async_session),
+        ) -> AuthContext:
+            allowed = await session.run_sync(
+                lambda sync_session: user_has_permission(
+                    sync_session,
+                    auth.user_id,
+                    permission_code,
+                    auth.business_id,
+                    None,
+                )
+            )
+            if not allowed:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Not enough permissions.",
+                )
+            return auth
+
+        return dependency
+
+    # Location-aware dependency
+    async def dependency(
+        auth: AuthContext = Depends(get_current_auth_context),
+        session: AsyncSession = Depends(get_async_session),
+        location_id: Any = Depends(location_resolver),
+    ) -> AuthContext:
+        allowed = await session.run_sync(
+            lambda sync_session: user_has_permission(
+                sync_session,
+                auth.user_id,
+                permission_code,
+                auth.business_id,
+                location_id,
+            )
+        )
+        if not allowed:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not enough permissions.",
+            )
+        return auth
+
+    return dependency
 
 def require_permission(permission_code: str):
     async def dependency(

@@ -1,6 +1,6 @@
 """Sample idempotent backfill: populate missing employee refs from a CSV"""
 import csv
-from apps.api.app.db.session import SessionLocal, engine, Base
+from apps.api.app.db.session import SessionLocal
 from apps.api.app.models.integrations_models import EmployeeRef
 import uuid
 

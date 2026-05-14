@@ -1,25 +1,36 @@
 /**
  * Hospitable API client.
- * All requests go to /api/v1/hospitable/...
+ * All requests go to /api/v1/...
  * The Next.js app proxies to the FastAPI backend in production.
  */
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api-hn3t.pythonanywhere.com'
 
+function getClientAccessToken(): string | null {
+  if (typeof window === 'undefined') return null
+  return localStorage.getItem('access_token')
+}
+
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json', ...(init?.headers as Record<string, string> | undefined) }
+  const token = getClientAccessToken()
+  if (token) headers['Authorization'] = `Bearer ${token}`
+
   const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
+    headers,
     ...init,
   })
   if (!res.ok) {
     const text = await res.text()
     throw new Error(`API ${res.status}: ${text}`)
   }
-  return res.json() as Promise<T>
+  // Some endpoints return empty body
+  const txt = await res.text()
+  try { return txt ? JSON.parse(txt) : (undefined as unknown as T) } catch (e) { throw new Error(`Invalid JSON from API: ${e}`) }
 }
 
 // ---------------------------------------------------------------------------
-// Types
+// Types (unchanged)
 // ---------------------------------------------------------------------------
 
 export type HousekeepingStatus =
@@ -185,7 +196,58 @@ export async function getLocationId(): Promise<string> {
 // API calls
 // ---------------------------------------------------------------------------
 
+// Auth types aligned with backend /api/v1/auth/* responses
+export interface AuthUser {
+  id: string
+  email: string
+  is_active: boolean
+}
+
+export interface AuthMembership {
+  business_id: string
+  status?: string
+  is_owner?: boolean
+}
+
+export interface LoginResponse {
+  access_token: string
+  token_type?: string
+  business_id?: string
+  user?: AuthUser
+  roles?: string[]
+  permissions?: string[]
+}
+
+export interface MeResponse {
+  user: AuthUser
+  business_id?: string
+  memberships?: AuthMembership[]
+  roles?: string[]
+  permissions?: string[]
+}
+
+export interface SwitchBusinessResponse {
+  access_token: string
+  token_type?: string
+  business_id?: string
+  roles?: string[]
+  permissions?: string[]
+}
+
 export const api = {
+  auth: {
+    login: (email: string, password: string) =>
+      apiFetch<LoginResponse>('/api/v1/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      }),
+
+    me: () => apiFetch<MeResponse>('/api/v1/auth/me'),
+
+    switchBusiness: (businessId: string) =>
+      apiFetch<SwitchBusinessResponse>('/api/v1/auth/switch-business', { method: 'POST', body: JSON.stringify({ business_id: businessId }) }),
+  },
+
   // Dashboard
   getDashboardSummary: (locationId: string) =>
     apiFetch<DashboardSummary>(`/api/v1/hospitable/dashboard/summary?location_id=${locationId}`),

@@ -117,3 +117,24 @@ def test_superadmin_removal_writes_audit():
 
         audits = db.execute(select(AuditEvent).where(AuditEvent.entity_id == m_member.id, AuditEvent.action == 'rbac.location_roles.remove')).scalars().all()
         assert len(audits) >= 1
+
+
+def test_last_location_owner_guard_regression():
+    with db_session() as db:
+        u = User(email='solo_owner_regression@example.com', is_superadmin=False, hashed_password='')
+        db.add(u); db.flush()
+        biz = Business(id='biz-guard-2', name='Biz Guard')
+        db.add(biz); db.flush()
+        loc = Location(id='loc-guard-2', business_id=biz.id, name='LocGuard', timezone='UTC')
+        db.add(loc); db.flush()
+        m = Membership(user_id=u.id, business_id=biz.id, status='active')
+        db.add(m); db.flush()
+        role_owner = BizRole(id='role-owner-guard-2', name='Location Owner', scope_type='LOCATION', business_id=biz.id)
+        db.add(role_owner); db.flush()
+        db.add(MembershipLocationRole(membership_id=m.id, location_id=loc.id, role_id=role_owner.id))
+        db.flush()
+
+        assignments = {loc.id: []}
+        job_title_labels = {}
+        with pytest.raises(ValueError):
+            set_member_location_roles_service(biz.id, m.id, assignments, job_title_labels, db, u)

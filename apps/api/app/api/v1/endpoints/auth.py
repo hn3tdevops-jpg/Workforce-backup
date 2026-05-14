@@ -1,24 +1,40 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import AuthContext, get_current_auth_context
-from app.core.security import create_access_token, verify_password
-from app.db.session import get_async_session
-from app.models.access_control import Membership
-from app.models.user import User
-from app.services.rbac_service import (
+from apps.api.app.api.dependencies import AuthContext, get_current_auth_context
+from apps.api.app.core.security import create_access_token, verify_password, hash_password
+from apps.api.app.db.session import get_async_session
+from apps.api.app.models.access_control import Membership
+from apps.api.app.models.user import User
+from apps.api.app.services.rbac_service import (
     get_active_memberships_for_user,
     get_effective_permission_codes,
     get_effective_role_names,
 )
 
 router = APIRouter()
+
+
+class RegisterRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class RegisterResponse(BaseModel):
+    id: uuid.UUID
+    email: EmailStr
+    access_token: str | None = None
+    token_type: str | None = None
+    user: UserSummary | None = None
+    business_id: uuid.UUID | None = None
+
 
 
 class LoginRequest(BaseModel):
@@ -66,13 +82,42 @@ class MeResponse(BaseModel):
     permissions: list[str]
 
 
+class AccessContextAssignment(BaseModel):
+    id: str
+    role_name: str
+    scope_type: str
+    permissions: list[str]
+
+
+class AccessContextScope(BaseModel):
+    employee_profile_id: str
+    employee_name: str
+    employee_code: str | None
+    job_title: str | None
+    department: str | None
+    employment_status: str
+    assignments: list[AccessContextAssignment]
+    effective_permissions: list[str]
+    is_super_admin: bool
+    link_status: str
+
+
+class AccessContextResponse(BaseModel):
+    user_id: uuid.UUID
+    has_access: bool
+    active_scope_count: int
+    scopes: list[AccessContextScope]
+    resolved_at: str
+
+
 async def _load_active_memberships(
     session: AsyncSession,
     user_id: uuid.UUID,
 ) -> list[Membership]:
-    return await session.run_sync(
+    memberships = await session.run_sync(
         lambda sync_session: get_active_memberships_for_user(sync_session, user_id)
     )
+    return memberships
 
 
 def _choose_membership(
@@ -94,9 +139,10 @@ def _choose_membership(
             )
         return chosen_membership
 
-    if user.business_id is not None:
+    user_business_id = getattr(user, "business_id", None)
+    if user_business_id is not None:
         for membership in memberships:
-            if membership.business_id == user.business_id:
+            if membership.business_id == user_business_id:
                 chosen_membership = membership
                 break
 
@@ -157,50 +203,109 @@ async def _load_membership_summaries(
     ]
 
 
+@router.post("/register", response_model=RegisterResponse, status_code=201)
+async def register(
+    payload: RegisterRequest,
+    session: AsyncSession = Depends(get_async_session),
+) -> RegisterResponse:
+    """Create a new system user (self-registration).
+
+    Minimal, safe implementation: rejects duplicate emails and stores a bcrypt-hashed password.
+    This keeps the user model separate from employee files and preserves tenant scoping.
+    Additionally, issue an access token for immediate login in dev/UX scenarios.
+    """
+    existing = await session.scalar(select(User).where(User.email == payload.email))
+    if existing is not None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered.")
+
+    user = User(email=payload.email, hashed_password=hash_password(payload.password))
+    session.add(user)
+    await session.commit()
+    await session.refresh(user)
+
+    # Issue an access token without a chosen business; frontend will decide how to proceed.
+    access_token = create_access_token(user_id=str(user.id))
+    user_summary = UserSummary(id=user.id, email=user.email, is_active=user.is_active)
+
+    return RegisterResponse(
+        id=user.id,
+        email=user.email,
+        access_token=access_token,
+        token_type="bearer",
+        user=user_summary,
+        business_id=None,
+    )
+
+
 @router.post("/login", response_model=LoginResponse)
 async def login(
     payload: LoginRequest,
     session: AsyncSession = Depends(get_async_session),
 ) -> LoginResponse:
-    user = await session.scalar(
-        select(User).where(User.email == payload.email)
-    )
-    if user is None or not verify_password(payload.password, user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password.",
+    """Authenticate a user and return an access token.
+
+    NOTE: Database access errors are caught and converted to a 503 so the frontend
+    receives a stable, non-exposing error message instead of an internal traceback.
+    This is a minimal safe mitigation for production environments where migrations
+    or DB provisioning may be incomplete. Operators should run migrations/seed in
+    production to fully restore auth functionality.
+    """
+    try:
+        user = await session.scalar(
+            select(User).where(User.email == payload.email)
         )
 
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Inactive user.",
+        # DEBUG: show hashed password and verification result when running tests
+
+        valid_pw = user is not None and verify_password(payload.password, user.hashed_password)
+        if user is None or not valid_pw:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid email or password.",
+            )
+
+        if not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Inactive user.",
+            )
+
+        memberships = await _load_active_memberships(session, user.id)
+        if not memberships:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="User has no active memberships.",
+            )
+
+        chosen_membership = _choose_membership(memberships, payload.business_id, user)
+
+        access_token = create_access_token(
+            user_id=str(user.id),
+            business_id=str(chosen_membership.business_id),
         )
 
-    memberships = await _load_active_memberships(session, user.id)
-    if not memberships:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User has no active memberships.",
+        return LoginResponse(
+            access_token=access_token,
+            token_type="bearer",
+            business_id=chosen_membership.business_id,
+            user=UserSummary(
+                id=user.id,
+                email=user.email,
+                is_active=user.is_active,
+            ),
         )
 
-    chosen_membership = _choose_membership(memberships, payload.business_id, user)
+    except HTTPException:
+        # Re-raise expected HTTP exceptions (401/403)
+        raise
+    except Exception:  # pragma: no cover - defensive
+        import logging
 
-    access_token = create_access_token(
-        user_id=str(user.id),
-        business_id=str(chosen_membership.business_id),
-    )
-
-    return LoginResponse(
-        access_token=access_token,
-        token_type="bearer",
-        business_id=chosen_membership.business_id,
-        user=UserSummary(
-            id=user.id,
-            email=user.email,
-            is_active=user.is_active,
-        ),
-    )
+        logging.exception("Unhandled error in /auth/login")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Authentication service temporarily unavailable.",
+        )
 
 
 @router.post("/switch-business", response_model=SwitchBusinessResponse)
@@ -254,4 +359,71 @@ async def me(
         memberships=memberships,
         roles=roles,
         permissions=permissions,
+    )
+
+
+@router.get("/me/access-context", response_model=AccessContextResponse)
+async def me_access_context(
+    auth: AuthContext = Depends(get_current_auth_context),
+    session: AsyncSession = Depends(get_async_session),
+) -> AccessContextResponse:
+    """Return a COMPAT access-context scope derived from current RBAC data.
+
+    Constructs one safe scope from existing membership and RBAC data when real
+    employee-link tables are not available. A user without an active membership
+    for the token's business receives has_access=False with no scopes.
+    """
+    resolved_at = datetime.now(timezone.utc).isoformat()
+
+    memberships = await _load_active_memberships(session, auth.user_id)
+    has_active_membership = any(
+        m.business_id == auth.business_id for m in memberships
+    )
+
+    if not has_active_membership:
+        return AccessContextResponse(
+            user_id=auth.user_id,
+            has_access=False,
+            active_scope_count=0,
+            scopes=[],
+            resolved_at=resolved_at,
+        )
+
+    roles, permissions = await _load_roles_and_permissions(
+        session, auth.user_id, auth.business_id
+    )
+
+    is_super_admin = "*" in permissions or "superadmin:*" in permissions
+
+    assignments = [
+        AccessContextAssignment(
+            id=f"compat-ra-{role}",
+            role_name=role,
+            scope_type="BUSINESS",
+            # COMPAT mode: per-role permission breakdown is unavailable;
+            # all assignments carry the user's full effective permissions.
+            permissions=permissions,
+        )
+        for role in roles
+    ]
+
+    scope = AccessContextScope(
+        employee_profile_id=f"compat-ep-{auth.user_id}",
+        employee_name=auth.user.email,
+        employee_code=None,
+        job_title=None,
+        department=None,
+        employment_status="ACTIVE",
+        assignments=assignments,
+        effective_permissions=permissions,
+        is_super_admin=is_super_admin,
+        link_status="COMPAT",
+    )
+
+    return AccessContextResponse(
+        user_id=auth.user_id,
+        has_access=True,
+        active_scope_count=1,
+        scopes=[scope],
+        resolved_at=resolved_at,
     )

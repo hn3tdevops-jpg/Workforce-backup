@@ -14,7 +14,6 @@ from sqlalchemy.orm import selectinload
 from apps.api.app.modules.hospitable.models.property_ops import (
     HKRoom,
     HKRoomAsset,
-    HKRoomGroup,
     HKRoomStatusEvent,
     HKRoomSupplyPar,
     HKTask,
@@ -27,7 +26,6 @@ from apps.api.app.modules.hospitable.models.property_ops import (
     OccupancyStatus,
     PropertyBuilding,
     PropertyFloor,
-    PropertySector,
     TaskStatus,
 )
 from apps.api.app.modules.hospitable.schemas.room_ops import (

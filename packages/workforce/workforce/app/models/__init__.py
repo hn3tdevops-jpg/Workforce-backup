@@ -1,26 +1,30 @@
-# Local model registry: import all model classes so Base.metadata is populated
-from packages.workforce.workforce.app.models.base import Base  # noqa: F401
-from packages.workforce.workforce.app.models.business import Business, Location  # noqa: F401
-from packages.workforce.workforce.app.models.employee import Employee, Employment, EmployeeRole, Role  # noqa: F401
-from packages.workforce.workforce.app.models.scheduling import AvailabilityBlock, Shift, ShiftAssignment  # noqa: F401
-from packages.workforce.workforce.app.models.training import EmployeeTraining, TrainingModule  # noqa: F401
-from packages.workforce.workforce.app.models.audit import AuditLog  # noqa: F401
-from packages.workforce.workforce.app.models.identity import AuditEvent  # noqa: F401
-from packages.workforce.workforce.app.models.identity import (
-    User, RefreshToken, Membership, WorkerProfile,
-    BizRole, Permission, BizRolePermission, MembershipRole, MembershipLocationRole,
-    Agent, AgentCredential, AgentRun,
-)  # noqa: F401
-from packages.workforce.workforce.app.models.auth import Role as AuthRole, user_roles  # noqa: F401
-from packages.workforce.workforce.app.models.timeclock import TimeEntry, TimeEntryStatus  # noqa: F401
-from packages.workforce.workforce.app.models.marketplace import (
-    JobPosting, ShiftRequest, TrainingRequest, ShiftSwapRequest, SwapPermissionRule,
-    PostingStatus, RequestStatus, SwapStatus, SwapRuleEffect,
-)  # noqa: F401
-from packages.workforce.workforce.app.models.schedule import ScheduleShift, ScheduleAssignment, ShiftStatus, AssignmentStatus  # noqa: F401
-from packages.workforce.workforce.app.models.dashboard import WidgetDefinition, DashboardTemplate, UserDashboard, WidgetType  # noqa: F401
-from packages.workforce.workforce.app.models.messaging import Channel, ChannelMember, Message, MessagingApiKey  # noqa: F401
-from packages.workforce.workforce.app.models.hkops import (
-    HKRoom, HKTaskType, HKTask, HKInspection,
-    RoomStatus, TaskStatus, TaskPriority, InspectionResult,
-)  # noqa: F401
+# Package models registry.
+# Avoid importing all model modules eagerly here; importing this package should not
+# automatically populate SQLAlchemy metadata to prevent duplicate Table registration
+# when the same model classes are available through different import paths.
+__all__ = [
+    "base",
+    "business",
+    "employee",
+    "scheduling",
+    "training",
+    "audit",
+    "identity",
+    "auth",
+    "timeclock",
+    "marketplace",
+    "schedule",
+    "dashboard",
+    "messaging",
+    "hkops",
+]
+
+# Ensure scheduling models are importable under the package name so that
+# SQLAlchemy relationships referencing 'models.scheduling.AvailabilityBlock'
+# can be resolved even when models are discovered via different import paths.
+# Importing this module is intentionally lightweight: it only imports model
+# definitions (no side-effects) and makes them available as
+# 'packages.workforce.workforce.app.models.scheduling'.
+from . import employee  # noqa: F401  # ensure Employee is registered before scheduling
+from . import scheduling  # noqa: F401
+from . import identity  # noqa: F401  # ensure identity models (User, Membership) are registered

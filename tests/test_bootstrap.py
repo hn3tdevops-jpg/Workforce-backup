@@ -10,7 +10,9 @@ from app.models.user import User
 
 
 @pytest.mark.asyncio
-async def test_bootstrap_creates_entities(client: AsyncClient, db_session) -> None:
+async def test_bootstrap_creates_entities(
+    client: AsyncClient, db_session
+) -> None:
     response = await client.post(
         "/api/v1/bootstrap",
         json={
@@ -33,9 +35,7 @@ async def test_bootstrap_creates_entities(client: AsyncClient, db_session) -> No
     location = await db_session.scalar(
         select(Location).where(Location.id == location_id)
     )
-    user = await db_session.scalar(
-        select(User).where(User.id == user_id)
-    )
+    user = await db_session.scalar(select(User).where(User.id == user_id))
 
     assert business is not None
     assert location is not None
@@ -95,7 +95,9 @@ async def test_bootstrap_creates_entities(client: AsyncClient, db_session) -> No
 
 
 @pytest.mark.asyncio
-async def test_bootstrap_forbidden_when_users_exist(client: AsyncClient) -> None:
+async def test_bootstrap_forbidden_when_users_exist(
+    client: AsyncClient,
+) -> None:
     first = await client.post(
         "/api/v1/bootstrap",
         json={
@@ -117,4 +119,7 @@ async def test_bootstrap_forbidden_when_users_exist(client: AsyncClient) -> None
         },
     )
     assert second.status_code == 403
-    assert second.json()["detail"] == "Bootstrap is only allowed when no users exist."
+    assert (
+        second.json()["detail"]
+        == "Bootstrap is only allowed when no users exist."
+    )
