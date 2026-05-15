@@ -156,3 +156,7 @@ https://github.com/hn3tdevops-jpg/Workforce-backup/pull/15
 - Added `GET /api/v1/me/effective-permissions` to the real runtime route and verified it with `tests/test_me_effective_permissions.py`.
 - Strengthened the tenant service last-location-owner guard before location-role removal.
 - Verified the core slice passes: 6 tests green.
+
+## 2026-04-28 — Frontend alignment deferred
+- Reviewed the membership-first frontend alignment path.
+- Deferred code changes in the showcase frontend so the current backend checkpoint stays isolated.
