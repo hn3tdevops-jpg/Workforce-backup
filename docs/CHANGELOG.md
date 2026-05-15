@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-04-28
+### Changed
+- Backend auth/bootstrap now treats memberships plus scoped role assignments as the canonical identity path.
+- Reviewed the showcase frontend membership-first alignment path and deferred code changes to keep the backend checkpoint isolated.
+
 ## 2026-04-27
 ### Added
 - Centralized import guard and diagnostics to stabilize tests (SKIP_WORKFORCE_MODELS).

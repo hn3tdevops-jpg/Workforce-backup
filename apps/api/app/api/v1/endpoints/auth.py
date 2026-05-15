@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from apps.api.app.api.dependencies import AuthContext, get_current_auth_context
-from apps.api.app.core.security import create_access_token, verify_password, hash_password
+from apps.api.app.core.security import create_access_token, hash_password, verify_password
 from apps.api.app.db.session import get_async_session
 from apps.api.app.models.access_control import Membership
 from apps.api.app.models.user import User
@@ -26,26 +26,6 @@ class RegisterRequest(BaseModel):
     password: str
 
 
-class RegisterResponse(BaseModel):
-    id: uuid.UUID
-    email: EmailStr
-    access_token: str | None = None
-    token_type: str | None = None
-    user: UserSummary | None = None
-    business_id: uuid.UUID | None = None
-
-
-
-class LoginRequest(BaseModel):
-    email: EmailStr
-    password: str
-    business_id: uuid.UUID | None = None
-
-
-class SwitchBusinessRequest(BaseModel):
-    business_id: uuid.UUID
-
-
 class UserSummary(BaseModel):
     id: uuid.UUID
     email: EmailStr
@@ -56,6 +36,25 @@ class MembershipSummary(BaseModel):
     business_id: uuid.UUID
     status: str
     is_owner: bool
+
+
+class RegisterResponse(BaseModel):
+    id: uuid.UUID
+    email: EmailStr
+    access_token: str | None = None
+    token_type: str | None = None
+    user: UserSummary | None = None
+    business_id: uuid.UUID | None = None
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+    business_id: uuid.UUID | None = None
+
+
+class SwitchBusinessRequest(BaseModel):
+    business_id: uuid.UUID
 
 
 class LoginResponse(BaseModel):
@@ -85,42 +84,25 @@ async def _load_active_memberships(
     session: AsyncSession,
     user_id: uuid.UUID,
 ) -> list[Membership]:
-    memberships = await session.run_sync(
+    return await session.run_sync(
         lambda sync_session: get_active_memberships_for_user(sync_session, user_id)
     )
-    return memberships
 
 
 def _choose_membership(
     memberships: list[Membership],
     requested_business_id: uuid.UUID | None,
-    user: User,
 ) -> Membership:
-    chosen_membership = None
-
     if requested_business_id is not None:
         for membership in memberships:
             if membership.business_id == requested_business_id:
-                chosen_membership = membership
-                break
-        if chosen_membership is None:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="User does not have access to that business.",
-            )
-        return chosen_membership
+                return membership
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User does not have access to that business.",
+        )
 
-    user_business_id = getattr(user, "business_id", None)
-    if user_business_id is not None:
-        for membership in memberships:
-            if membership.business_id == user_business_id:
-                chosen_membership = membership
-                break
-
-    if chosen_membership is None:
-        chosen_membership = memberships[0]
-
-    return chosen_membership
+    return memberships[0]
 
 
 async def _load_roles_and_permissions(
@@ -179,12 +161,6 @@ async def register(
     payload: RegisterRequest,
     session: AsyncSession = Depends(get_async_session),
 ) -> RegisterResponse:
-    """Create a new system user (self-registration).
-
-    Minimal, safe implementation: rejects duplicate emails and stores a bcrypt-hashed password.
-    This keeps the user model separate from employee files and preserves tenant scoping.
-    Additionally, issue an access token for immediate login in dev/UX scenarios.
-    """
     existing = await session.scalar(select(User).where(User.email == payload.email))
     if existing is not None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered.")
@@ -194,7 +170,6 @@ async def register(
     await session.commit()
     await session.refresh(user)
 
-    # Issue an access token without a chosen business; frontend will decide how to proceed.
     access_token = create_access_token(user_id=str(user.id))
     user_summary = UserSummary(id=user.id, email=user.email, is_active=user.is_active)
 
@@ -213,20 +188,8 @@ async def login(
     payload: LoginRequest,
     session: AsyncSession = Depends(get_async_session),
 ) -> LoginResponse:
-    """Authenticate a user and return an access token.
-
-    NOTE: Database access errors are caught and converted to a 503 so the frontend
-    receives a stable, non-exposing error message instead of an internal traceback.
-    This is a minimal safe mitigation for production environments where migrations
-    or DB provisioning may be incomplete. Operators should run migrations/seed in
-    production to fully restore auth functionality.
-    """
     try:
-        user = await session.scalar(
-            select(User).where(User.email == payload.email)
-        )
-
-        # DEBUG: show hashed password and verification result when running tests
+        user = await session.scalar(select(User).where(User.email == payload.email))
 
         valid_pw = user is not None and verify_password(payload.password, user.hashed_password)
         if user is None or not valid_pw:
@@ -248,7 +211,7 @@ async def login(
                 detail="User has no active memberships.",
             )
 
-        chosen_membership = _choose_membership(memberships, payload.business_id, user)
+        chosen_membership = _choose_membership(memberships, payload.business_id)
 
         access_token = create_access_token(
             user_id=str(user.id),
@@ -267,7 +230,6 @@ async def login(
         )
 
     except HTTPException:
-        # Re-raise expected HTTP exceptions (401/403)
         raise
     except Exception:  # pragma: no cover - defensive
         import logging
@@ -286,7 +248,7 @@ async def switch_business(
     session: AsyncSession = Depends(get_async_session),
 ) -> SwitchBusinessResponse:
     memberships = await _load_active_memberships(session, auth.user_id)
-    chosen_membership = _choose_membership(memberships, payload.business_id, auth.user)
+    chosen_membership = _choose_membership(memberships, payload.business_id)
 
     access_token = create_access_token(
         user_id=str(auth.user_id),

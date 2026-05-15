@@ -78,7 +78,6 @@ async def bootstrap(
         id=uuid.uuid4(),
         email=payload.admin_email,
         hashed_password=hash_password(payload.admin_password),
-        business_id=business.id,  # transitional compatibility field
         is_active=True,
     )
     session.add(user)

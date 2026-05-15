@@ -45,7 +45,6 @@ async def test_bootstrap_creates_entities(
     assert location.name == "HQ"
     assert location.business_id == business.id
     assert user.email == "hn3torg@gmail.com"
-    assert user.business_id == business.id
 
     tenant = await db_session.scalar(
         select(Tenant).where(Tenant.id == business.tenant_id)
